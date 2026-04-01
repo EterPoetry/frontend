@@ -1,0 +1,44 @@
+.verification-page {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-bg-page);
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.verification-card {
+    background-color: var(--color-bg-card);
+    padding: 60px 40px;
+    border-radius: 2px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.verification-logo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.verification-logo {
+    width: 60px;
+    height: auto;
+}
+
+.verification-divider-line {
+    width: 50px;
+    height: 1px;
+    background-color: var(--color-border);
+    margin-top: 20px;
+}

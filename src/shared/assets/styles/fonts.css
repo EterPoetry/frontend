@@ -1,0 +1,29 @@
+@font-face {
+    font-family: 'Lora';
+    src: url('@/shared/assets/fonts/Lora/Lora-VariableFont.ttf') format('truetype');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Lora';
+    src: url('@/shared/assets/fonts/Lora/Lora-Italic-VariableFont.ttf') format('truetype');
+    font-weight: 400 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+:root {
+    --font-main: 'Lora';
+}
+
+body {
+    font-family: var(--font-main), serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea {
+    font-family: inherit;
+}

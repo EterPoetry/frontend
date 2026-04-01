@@ -1,0 +1,63 @@
+.input-group {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-label {
+    font-size: 15px;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+}
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.input-field {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    background: transparent;
+    padding: 6px 0;
+    font-size: 18px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--color-text-main);
+    outline: none;
+    transition: border-bottom-color 0.3s;
+}
+
+.input-field::placeholder {
+    font-weight: 300;
+    font-style: italic;
+    color: var(--color-text-muted);
+    opacity: 0.5;
+}
+
+.input-field:focus {
+    border-bottom-color: var(--color-primary);
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    color: var(--color-text-main);
+    transition: color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6;
+}
+
+.password-toggle svg {
+    width: 20px;
+    height: 20px;
+}
