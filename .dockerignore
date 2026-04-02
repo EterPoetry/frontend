@@ -1,0 +1,9 @@
+.git
+.github
+.idea
+node_modules
+dist
+npm-debug.log*
+tsconfig.tsbuildinfo
+.env
+.env.*
