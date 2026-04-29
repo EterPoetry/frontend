@@ -20,7 +20,6 @@ const authStore = useAuthStore();
     <main class="home-main">
       <div class="home-hero">
         <h1 class="home-title">{{ uk.common.appName }}</h1>
-        <p class="home-description">{{ uk.home.welcome }}</p>
       </div>
     </main>
   </div>

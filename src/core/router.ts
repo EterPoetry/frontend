@@ -2,43 +2,57 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
 import { uk } from "@/shared/locales/uk";
+import { updateSeoMeta } from '@/core/seo';
+import { SEO_ROUTES } from '@/shared/constants/seo.constants';
+
+const noIndexMeta = SEO_ROUTES.noIndex;
 
 const routes: Array<RouteRecordRaw> = [
+    {
+        path: '/',
+        name: 'landing',
+        component: () => import('@/modules/auth/pages/LandingPage/LandingPage.vue'),
+        meta: {
+            isPublic: true,
+            skipAuthRefresh: true,
+            ...SEO_ROUTES.landing,
+        }
+    },
     {
         path: '/login',
         name: AuthRouteNames.LOGIN,
         component: () => import('@/modules/auth/pages/LoginPage/LoginPage.vue'),
-        meta: { isPublic: true, guestOnly: true, skipAuthRefresh: true, title: uk.auth.login.title }
+        meta: { isPublic: true, guestOnly: true, skipAuthRefresh: true, title: uk.auth.login.title, ...noIndexMeta }
     },
     {
         path: '/register',
         name: AuthRouteNames.REGISTER,
         component: () => import('@/modules/auth/pages/RegisterPage/RegisterPage.vue'),
-        meta: { isPublic: true, guestOnly: true, title: uk.auth.register.title }
+        meta: { isPublic: true, guestOnly: true, title: uk.auth.register.title, ...noIndexMeta }
     },
     {
         path: '/verification',
         name: AuthRouteNames.VERIFICATION,
         component: () => import('@/modules/auth/pages/VerificationPage/VerificationPage.vue'),
-        meta: { requiresAuth: true, requiresVerification: false, title: uk.auth.verification.title }
+        meta: { requiresAuth: true, requiresVerification: false, title: uk.auth.verification.title, ...noIndexMeta }
     },
     {
-        path: '/',
+        path: '/app',
         name: AuthRouteNames.HOME,
         component: () => import('@/modules/auth/pages/HomePage/HomePage.vue'),
-        meta: { requiresAuth: true, requiresVerification: true, title: uk.home.title }
+        meta: { isPublic: true, title: uk.home.title, ...noIndexMeta }
     },
     {
         path: '/forgot-password',
         name: AuthRouteNames.FORGOT_PASSWORD,
         component: () => import('@/modules/auth/pages/ForgotPasswordPage/ForgotPasswordPage.vue'),
-        meta: { isPublic: true, guestOnly: true, title: uk.auth.forgotPassword.title }
+        meta: { isPublic: true, guestOnly: true, title: uk.auth.forgotPassword.title, ...noIndexMeta }
     },
     {
         path: '/reset-password',
         name: AuthRouteNames.RESET_PASSWORD,
         component: () => import('@/modules/auth/pages/ResetPasswordPage/ResetPasswordPage.vue'),
-        meta: { isPublic: true, guestOnly: true, skipAuthRefresh: true, title: uk.auth.resetPassword.title }
+        meta: { isPublic: true, guestOnly: true, skipAuthRefresh: true, title: uk.auth.resetPassword.title, ...noIndexMeta }
     }
 ];
 
@@ -48,8 +62,7 @@ const router = createRouter({
 });
 
 router.afterEach((to) => {
-    const pageTitle = to.meta.title as string;
-    document.title = pageTitle ? `${uk.common.appName} — ${pageTitle}` : uk.common.appName;
+    updateSeoMeta(to);
 });
 
 let isInitialAuthenticationChecked = false;
@@ -97,6 +110,10 @@ router.beforeEach(async (to, _from, next) => {
 
     const isAuthenticated = !!authStore.token;
     const isVerified = authStore.isVerified;
+
+    if (to.name === 'landing' && isAuthenticated) {
+        return next({ name: AuthRouteNames.HOME });
+    }
 
     if (to.meta.guestOnly && isAuthenticated) {
         if (isVerified) {
