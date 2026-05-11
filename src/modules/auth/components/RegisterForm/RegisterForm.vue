@@ -16,6 +16,7 @@ const emit = defineEmits<{
 
 const {
   name,
+  username,
   email,
   password,
   passwordConfirm,
@@ -40,6 +41,14 @@ const {
           type="text"
           :placeholder="register.placeholders.name"
           :max-length="AUTH_MAX_LENGTH.NAME"
+      />
+      <BaseInput
+          id="username"
+          v-model="username"
+          :label="common.labels.username"
+          type="text"
+          :placeholder="register.placeholders.username"
+          :max-length="AUTH_MAX_LENGTH.USERNAME"
       />
       <BaseInput
           id="email"

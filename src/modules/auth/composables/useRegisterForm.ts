@@ -12,6 +12,7 @@ export function useRegisterForm(emit: RegisterEmits) {
     const { common } = uk;
 
     const name = ref("");
+    const username = ref("");
     const email = ref("");
     const password = ref("");
     const passwordConfirm = ref("");
@@ -29,7 +30,7 @@ export function useRegisterForm(emit: RegisterEmits) {
         const passwordError = authValidator.validatePassword(password.value);
         const confirmError = authValidator.validatePasswordConfirm(password.value, passwordConfirm.value);
 
-        if (!name.value) {
+        if (!name.value || !username.value) {
             errorMessage.value = common.errors.emptyFields;
             return;
         }
@@ -44,6 +45,7 @@ export function useRegisterForm(emit: RegisterEmits) {
         try {
             const success = await authStore.register({
                 name: name.value,
+                username: username.value,
                 email: email.value,
                 password: password.value
             });
@@ -51,6 +53,7 @@ export function useRegisterForm(emit: RegisterEmits) {
             if (success) {
                 emit(AuthEvents.REGISTER, {
                     name: name.value,
+                    username: username.value,
                     email: email.value,
                     password: password.value,
                     passwordConfirm: passwordConfirm.value
@@ -61,7 +64,7 @@ export function useRegisterForm(emit: RegisterEmits) {
             if (!axiosError.response || axiosError.response.status >= 500) {
                 errorMessage.value = common.errors.serverError;
             } else if (axiosError.response.status === 409) {
-                errorMessage.value = register.errors.emailAlreadyRegistered;
+                errorMessage.value = register.errors.credentialsAlreadyRegistered;
             }
         } finally {
             isLoading.value = false;
@@ -70,6 +73,7 @@ export function useRegisterForm(emit: RegisterEmits) {
 
     return {
         name,
+        username,
         email,
         password,
         passwordConfirm,

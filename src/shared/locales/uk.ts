@@ -9,6 +9,7 @@ export const uk = {
             email: 'Email адреса',
             password: 'Пароль',
             name: "Ім'я",
+            username: 'Ім’я користувача',
             logout: 'Вийти',
         },
         errors: {
@@ -27,7 +28,7 @@ export const uk = {
                 createAccount: 'Створити акаунт',
             },
             placeholders: {
-                email: 'reader@eter.com',
+                email: 'Введіть вашу email адресу',
                 password: 'Введіть ваш пароль',
             },
             errors: {
@@ -44,13 +45,14 @@ export const uk = {
             },
             placeholders: {
                 name: 'Ваше ім’я',
-                email: 'reader@eter.com',
+                username: 'Придумайте ім’я користувача',
+                email: 'Введіть вашу email адресу',
                 password: 'Введіть ваш пароль',
                 passwordConfirm: 'Повторіть ваш пароль'
             },
             errors: {
                 passwordsDoNotMatch: 'Паролі не збігаються',
-                emailAlreadyRegistered: 'Користувач з такою поштою вже зареєстрований'
+                credentialsAlreadyRegistered: 'Користувач з такою поштою або ім’ям користувача вже зареєстрований'
             }
         },
         forgotPassword: {
@@ -61,7 +63,7 @@ export const uk = {
                 backToLogin: 'Повернутися до входу',
             },
             placeholders: {
-                email: 'reader@eter.com',
+                email: 'Введіть вашу email адресу',
             },
             info: {
                 description: 'Введіть вашу електронну пошту, і ми надішлемо вам інструкції для скидання паролю.',
