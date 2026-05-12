@@ -1,10 +1,15 @@
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { AxiosError } from "axios";
 import { useAuthStore } from "@/modules/auth/auth.store";
 import { AuthEvents } from "@/modules/auth/enums/auth-events.enum";
 import { uk } from "@/shared/locales/uk";
 import { RegisterEmits } from "@/modules/auth/interfaces/register-emits.interface";
 import { authValidator } from "../utils/auth-validation.utils";
+import { getApiFieldErrors } from "@/shared/utils/api-error.utils";
+
+type RegisterField = 'email' | 'username';
+
+type RegisterFieldErrors = Record<RegisterField, string>;
 
 export function useRegisterForm(emit: RegisterEmits) {
     const authStore = useAuthStore();
@@ -18,6 +23,22 @@ export function useRegisterForm(emit: RegisterEmits) {
     const passwordConfirm = ref("");
     const isLoading = ref(false);
     const errorMessage = ref("");
+    const fieldErrors = ref<RegisterFieldErrors>({
+        email: "",
+        username: ""
+    });
+
+    const clearFieldError = (field: RegisterField): void => {
+        fieldErrors.value[field] = "";
+    };
+
+    const resetFieldErrors = (): void => {
+        clearFieldError('email');
+        clearFieldError('username');
+    };
+
+    watch(email, () => clearFieldError('email'));
+    watch(username, () => clearFieldError('username'));
 
     const loginWithGoogle = (): void => {
         authStore.loginWithGoogle();
@@ -25,6 +46,7 @@ export function useRegisterForm(emit: RegisterEmits) {
 
     const handleSubmit = async (): Promise<void> => {
         errorMessage.value = "";
+        resetFieldErrors();
 
         const emailError = authValidator.validateEmail(email.value);
         const passwordError = authValidator.validatePassword(password.value);
@@ -60,11 +82,33 @@ export function useRegisterForm(emit: RegisterEmits) {
                 });
             }
         } catch (error: unknown) {
-            const axiosError = error as AxiosError<{ message?: string }>;
+            const axiosError = error as AxiosError;
             if (!axiosError.response || axiosError.response.status >= 500) {
                 errorMessage.value = common.errors.serverError;
             } else if (axiosError.response.status === 409) {
-                errorMessage.value = register.errors.credentialsAlreadyRegistered;
+                const apiFieldErrors = getApiFieldErrors(error);
+                const fieldErrorMessagesByCode: Record<string, string> = {
+                    EMAIL_NOT_UNIQUE: register.errors.emailAlreadyRegistered,
+                    USERNAME_NOT_UNIQUE: register.errors.usernameAlreadyTaken
+                };
+
+                const registrationFields: RegisterField[] = ['email', 'username'];
+                let hasKnownFieldErrors = false;
+
+                registrationFields.forEach((field) => {
+                    const fieldError = apiFieldErrors[field]?.[0];
+
+                    if (!fieldError) {
+                        return;
+                    }
+
+                    fieldErrors.value[field] = fieldErrorMessagesByCode[fieldError.code] || fieldError.message;
+                    hasKnownFieldErrors = true;
+                });
+
+                if (!hasKnownFieldErrors) {
+                    errorMessage.value = register.errors.credentialsAlreadyRegistered;
+                }
             }
         } finally {
             isLoading.value = false;
@@ -79,6 +123,7 @@ export function useRegisterForm(emit: RegisterEmits) {
         passwordConfirm,
         isLoading,
         errorMessage,
+        fieldErrors,
         register,
         common,
         loginWithGoogle,

@@ -22,6 +22,7 @@ const {
   passwordConfirm,
   isLoading,
   errorMessage,
+  fieldErrors,
   register,
   common,
   loginWithGoogle,
@@ -49,6 +50,7 @@ const {
           type="text"
           :placeholder="register.placeholders.username"
           :max-length="AUTH_MAX_LENGTH.USERNAME"
+          :error-message="fieldErrors.username"
       />
       <BaseInput
           id="email"
@@ -57,6 +59,7 @@ const {
           type="text"
           :placeholder="register.placeholders.email"
           :max-length="AUTH_MAX_LENGTH.EMAIL"
+          :error-message="fieldErrors.email"
       />
       <BaseInput
           id="password"

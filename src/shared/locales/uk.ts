@@ -52,7 +52,9 @@ export const uk = {
             },
             errors: {
                 passwordsDoNotMatch: 'Паролі не збігаються',
-                credentialsAlreadyRegistered: 'Користувач з такою поштою або ім’ям користувача вже зареєстрований'
+                credentialsAlreadyRegistered: 'Користувач з такою поштою або ім’ям користувача вже зареєстрований',
+                emailAlreadyRegistered: 'Ця email адреса вже зареєстрована',
+                usernameAlreadyTaken: 'Це ім’я користувача вже зайняте'
             }
         },
         forgotPassword: {

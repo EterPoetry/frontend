@@ -19,7 +19,8 @@ const { isPasswordVisible, togglePasswordVisibility, inputType } = useBaseInput(
           :placeholder="placeholder"
           :value="modelValue"
           :maxlength="maxLength"
-          class="input-field"
+          :class="['input-field', { 'is-invalid': errorMessage }]"
+          :aria-invalid="Boolean(errorMessage)"
           autocomplete="off"
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
@@ -39,5 +40,6 @@ const { isPasswordVisible, togglePasswordVisibility, inputType } = useBaseInput(
         </svg>
       </button>
     </div>
+    <span v-if="errorMessage" class="input-error">{{ errorMessage }}</span>
   </div>
 </template>
