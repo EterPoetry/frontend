@@ -49,11 +49,17 @@ export function useRegisterForm(emit: RegisterEmits) {
         resetFieldErrors();
 
         const emailError = authValidator.validateEmail(email.value);
+        const usernameError = authValidator.validateUsername(username.value);
         const passwordError = authValidator.validatePassword(password.value);
         const confirmError = authValidator.validatePasswordConfirm(password.value, passwordConfirm.value);
 
         if (!name.value || !username.value) {
             errorMessage.value = common.errors.emptyFields;
+            return;
+        }
+
+        if (usernameError) {
+            fieldErrors.value.username = usernameError;
             return;
         }
 

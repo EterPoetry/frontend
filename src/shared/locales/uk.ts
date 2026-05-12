@@ -16,6 +16,7 @@ export const uk = {
             serverError: 'Сталася помилка. Перевірте ваше з’єднання або спробуйте пізніше.',
             emptyFields: 'Будь ласка, заповніть всі поля',
             invalidEmail: 'Введіть коректну email адресу',
+            usernameTooShort: (min: number) => `Ім’я користувача має містити мінімум ${min} символи`,
             passwordTooShort: (min: number) => `Пароль має містити мінімум ${min} символів`,
         }
     },

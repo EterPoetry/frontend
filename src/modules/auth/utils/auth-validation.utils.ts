@@ -10,6 +10,14 @@ export const authValidator = {
         return null;
     },
 
+    validateUsername(username: string): string | null {
+        if (!username) return common.errors.emptyFields;
+        if (username.length < AUTH_VALIDATION.MIN_USERNAME_LENGTH) {
+            return common.errors.usernameTooShort(AUTH_VALIDATION.MIN_USERNAME_LENGTH);
+        }
+        return null;
+    },
+
     validatePassword(password: string): string | null {
         if (!password) return common.errors.emptyFields;
         if (password.length < AUTH_VALIDATION.MIN_PASSWORD_LENGTH) {

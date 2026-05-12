@@ -18,6 +18,15 @@ export function useVerificationForm(emit: VerificationEmits) {
     const remainingMs = ref<number | null>(null);
 
     const userEmail = computed(() => authStore.user?.email || "");
+    const applyRemainingMs = (ms: number | null): void => {
+        remainingMs.value = ms !== null && ms > 0 ? ms : null;
+    };
+
+    const syncRemainingMs = async (): Promise<number | null> => {
+        const data = await authStore.getVerificationStatus();
+        applyRemainingMs(data.remainingMs);
+        return data.remainingMs;
+    };
 
     const currentDescription = computed(() => {
         const emailTag = `<strong>${userEmail.value}</strong>`;
@@ -38,13 +47,26 @@ export function useVerificationForm(emit: VerificationEmits) {
         try {
             const success = await authStore.requestVerificationEmail();
             if (success) {
-                remainingMs.value = AUTH_VERIFICATION.VERIFICATION_TIMEOUT_MS;
+                try {
+                    const syncedRemainingMs = await syncRemainingMs();
+                    if (syncedRemainingMs === null) {
+                        applyRemainingMs(AUTH_VERIFICATION.VERIFICATION_TIMEOUT_MS);
+                    }
+                } catch {
+                    applyRemainingMs(AUTH_VERIFICATION.VERIFICATION_TIMEOUT_MS);
+                }
                 emit(AuthEvents.RESEND_CODE);
             }
         } catch (error: unknown) {
             const axiosError = error as AxiosError<{ message?: string }>;
             if (!axiosError.response || axiosError.response.status >= 500) {
                 errorMessage.value = common.errors.serverError;
+            } else if (axiosError.response.status === 429) {
+                try {
+                    await syncRemainingMs();
+                } catch {
+                    applyRemainingMs(AUTH_VERIFICATION.VERIFICATION_TIMEOUT_MS);
+                }
             }
         } finally {
             isLoading.value = false;
@@ -53,11 +75,9 @@ export function useVerificationForm(emit: VerificationEmits) {
 
     const checkStatus = async (): Promise<void> => {
         try {
-            const data = await authStore.getVerificationStatus();
-            if (data.remainingMs === null) {
+            const currentRemainingMs = await syncRemainingMs();
+            if (currentRemainingMs === null) {
                 await handleSendRequest();
-            } else {
-                remainingMs.value = data.remainingMs;
             }
         } catch (error: unknown) {
             console.error(error);
