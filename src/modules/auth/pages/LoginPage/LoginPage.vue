@@ -2,6 +2,7 @@
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/modules/auth/auth.store";
 import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
+import { PostRouteNames } from "@/modules/posts/enums/post-route-names.enum";
 import { uk } from "@/shared/locales/uk";
 import LoginForm from "@/modules/auth/components/LoginForm/LoginForm.vue";
 import logoUrl from "@/shared/assets/icons/eter-logo.svg";
@@ -12,7 +13,7 @@ const authStore = useAuthStore();
 
 const handleLoginSuccess = async (): Promise<void> => {
   if (authStore.isVerified) {
-    await router.push({ name: AuthRouteNames.HOME });
+    await router.push({ name: PostRouteNames.HOME });
   } else {
     await router.push({ name: AuthRouteNames.VERIFICATION });
   }

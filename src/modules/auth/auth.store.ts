@@ -33,66 +33,46 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async login(data: Pick<AuthData, 'email' | 'password'>): Promise<boolean> {
-            try {
-                const response = await api.post<AuthResponse>('/auth/login', data);
-                const { user, accessToken } = response.data;
+            const response = await api.post<AuthResponse>('/auth/login', data);
+            const { user, accessToken } = response.data;
 
-                this.token = accessToken;
-                this.user = user;
-                localStorage.setItem('token', accessToken);
+            this.token = accessToken;
+            this.user = user;
+            localStorage.setItem('token', accessToken);
 
-                return true;
-            } catch (error) {
-                throw error;
-            }
+            return true;
         },
 
         async register(data: Omit<AuthData, 'passwordConfirm'>): Promise<boolean> {
-            try {
-                const response = await api.post<AuthResponse>('/auth/register', data);
-                const { user, accessToken } = response.data;
+            const response = await api.post<AuthResponse>('/auth/register', data);
+            const { user, accessToken } = response.data;
 
-                this.token = accessToken;
-                this.user = user;
-                localStorage.setItem('token', accessToken);
+            this.token = accessToken;
+            this.user = user;
+            localStorage.setItem('token', accessToken);
 
-                return true;
-            } catch (error) {
-                throw error;
-            }
+            return true;
         },
 
         async refresh(): Promise<{ accessToken: string }> {
-            try {
-                const response = await api.post<AuthResponse>('/auth/refresh');
-                const { accessToken, user } = response.data;
+            const response = await api.post<AuthResponse>('/auth/refresh');
+            const { accessToken, user } = response.data;
 
-                this.token = accessToken;
-                this.user = user;
-                localStorage.setItem('token', accessToken);
+            this.token = accessToken;
+            this.user = user;
+            localStorage.setItem('token', accessToken);
 
-                return { accessToken };
-            } catch (error) {
-                throw error;
-            }
+            return { accessToken };
         },
 
         async getVerificationStatus(): Promise<{ remainingMs: number | null }> {
-            try {
-                const response = await api.get<{ remainingMs: number | null }>('/auth/email/verify/request');
-                return response.data;
-            } catch (error) {
-                throw error;
-            }
+            const response = await api.get<{ remainingMs: number | null }>('/auth/email/verify/request');
+            return response.data;
         },
 
         async requestVerificationEmail(): Promise<boolean> {
-            try {
-                const response = await api.post<{ ok: boolean }>('/auth/email/verify/request');
-                return response.data.ok;
-            } catch (error) {
-                throw error;
-            }
+            const response = await api.post<{ ok: boolean }>('/auth/email/verify/request');
+            return response.data.ok;
         },
 
         loginWithGoogle(): void {
@@ -114,40 +94,29 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async verifyEmail(code: string): Promise<boolean> {
-            try {
-                const response = await api.post<{ ok: boolean }>('/auth/email/verify', {
-                    email: this.user?.email,
-                    code: code
-                });
+            const response = await api.post<{ ok: boolean }>('/auth/email/verify', {
+                email: this.user?.email,
+                code: code
+            });
 
-                if (response.data.ok && this.user) {
-                    this.user.isEmailVerified = true;
-                }
-                return response.data.ok;
-            } catch (error) {
-                throw error;
+            if (response.data.ok && this.user) {
+                this.user.isEmailVerified = true;
             }
+
+            return response.data.ok;
         },
 
         async forgotPassword(email: string): Promise<boolean> {
-            try {
-                const response = await api.post<{ ok: boolean }>('/auth/password/forgot', { email });
-                return response.data.ok;
-            } catch (error) {
-                throw error;
-            }
+            const response = await api.post<{ ok: boolean }>('/auth/password/forgot', { email });
+            return response.data.ok;
         },
 
         async resetPassword(token: string, newPassword: string): Promise<boolean> {
-            try {
-                const response = await api.post<{ ok: boolean }>('/auth/password/reset', {
-                    token,
-                    newPassword
-                });
-                return response.data.ok;
-            } catch (error) {
-                throw error;
-            }
+            const response = await api.post<{ ok: boolean }>('/auth/password/reset', {
+                token,
+                newPassword
+            });
+            return response.data.ok;
         },
     }
 });

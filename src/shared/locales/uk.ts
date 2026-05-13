@@ -192,6 +192,112 @@ export const uk = {
     },
     home: {
         title: 'Головна',
-        welcome: 'Ласкаво просимо до вашого особистого кабінету.'
+        searchPlaceholder: 'Пошук',
+        gridViewLabel: 'Перемкнути вигляд',
+        themeLabel: 'Перемкнути тему',
+        subscribeLabel: 'Оформити підписку',
+        notificationsLabel: 'Сповіщення',
+        profileLabel: 'Ваш профіль',
+        publishedReady: 'Аудіо оброблено. Пост уже готовий до публікації.',
+        nav: {
+            ariaLabel: 'Головна навігація',
+            home: 'Головна',
+            subscriptions: 'Підписки',
+            favorites: 'Улюблені',
+            profile: 'Профіль',
+            create: 'Створити',
+        },
+        actions: {
+            register: 'Зареєструватися',
+            login: 'Увійти',
+        },
+        sort: {
+            ariaLabel: 'Сортування',
+            latest: 'Найновіші',
+            popular: 'Популярні',
+        }
+    },
+    posts: {
+        audio: {
+            play: 'Відтворити аудіо',
+            pause: 'Поставити аудіо на паузу',
+            remove: 'Видалити аудіо',
+        },
+        modal: {
+            title: 'Завантажте або запишіть аудіо',
+            limitPrefix: 'Максимум',
+            limitSuffix: 'на безкоштовному тарифі',
+            minutesSuffix: 'хвилин',
+            recordingPrefix: 'Запис',
+            processing: 'Аудіо завантажено. Обробляємо файл перед відкриттям редактора.',
+            tabs: {
+                record: 'Записати',
+                upload: 'Завантажити файл',
+            },
+            uploadPrefix: 'Перетягніть файл або',
+            uploadLink: 'оберіть з пристрою',
+            removeConfirm: {
+                title: 'Видалити запис?',
+                text: 'Запис буде видалено. Завантажені файли видаляються без підтвердження.',
+                confirm: 'Видалити',
+            },
+            actions: {
+                startRecording: 'Розпочати запис',
+                stopRecording: 'Зупинити запис',
+                continue: 'Далі',
+            },
+            errors: {
+                selectAudio: 'Додайте аудіо, щоб продовжити.',
+                unsupportedFormat: 'Підтримуються лише mp3, wav, m4a, aac, ogg, opus та flac.',
+                emptyFile: 'Файл порожній. Оберіть інший аудіозапис.',
+                fileTooLarge: 'Файл перевищує максимальний розмір 80 MB.',
+                durationExceeded: (minutes: number) => `Тривалість аудіо перевищує ${minutes} хвилин.`,
+                recordingUnavailable: 'Ваш браузер не підтримує запис аудіо.',
+                recordingUnsupported: 'Запис у цьому браузері зараз недоступний. Спробуйте завантажити готовий аудіофайл.',
+                microphoneDenied: 'Не вдалося отримати доступ до мікрофона. Перевірте дозвіл у браузері й спробуйте ще раз.',
+                createFailed: 'Не вдалося створити пост. Спробуйте ще раз.',
+            }
+        },
+        editor: {
+            title: 'Деталі публікації',
+            subtitle: 'Розкажіть про вірш',
+            publish: 'Опублікувати',
+            update: 'Оновити',
+            replaceAudio: 'Замінити аудіо',
+            audioLabel: 'Аудіо',
+            audioPending: 'Аудіо ще обробляється.',
+            audioPendingHint: 'Щойно обробка завершиться, плеєр автоматично з’явиться тут.',
+            audioPendingBadge: 'Обробка',
+            audioUploading: 'Завантажуємо новий файл',
+            audioUploadingHint: 'Оновлюємо запис і готуємо його до подальшої обробки.',
+            audioUploadingBadge: 'Завантаження',
+            selectedLabel: 'Обрано',
+            confirmation: 'Я підтверджую, що маю право на публікацію цього запису та несу відповідальність за дотримання авторського права',
+            fields: {
+                title: 'Назва вірша',
+                text: 'Текст вірша',
+                textHint: 'необов’язково, але рекомендовано',
+                originAuthor: 'Автор вірша',
+                originAuthorHint: 'якщо вірш не ваш',
+                description: 'Опис вірша',
+                descriptionHint: 'необов’язково',
+                categories: 'Категорії',
+            },
+            placeholders: {
+                title: 'Введіть назву вірша...',
+                text: 'Введіть текст вірша...',
+                originAuthor: 'Введіть автора вірша...',
+                description: 'Введіть опис вірша...',
+                categorySearch: 'Пошук категорії',
+            },
+            errors: {
+                titleRequired: 'Додайте назву вірша.',
+                textRequired: 'Додайте текст вірша, щоб опублікувати запис.',
+                confirmRights: 'Підтвердіть право на публікацію цього запису.',
+                publishFailed: 'Не вдалося оновити пост. Спробуйте ще раз.',
+                audioReplaceFailed: 'Не вдалося замінити аудіо. Спробуйте ще раз.',
+            },
+            leaveConfirm: 'У вас є незбережені зміни. Ви точно хочете покинути сторінку?'
+        }
     }
 };

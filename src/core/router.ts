@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
+import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { uk } from "@/shared/locales/uk";
 import { updateSeoMeta } from '@/core/seo';
 import { SEO_ROUTES } from '@/shared/constants/seo.constants';
@@ -38,9 +39,15 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         path: '/app',
-        name: AuthRouteNames.HOME,
-        component: () => import('@/modules/auth/pages/HomePage/HomePage.vue'),
+        name: PostRouteNames.HOME,
+        component: () => import('@/modules/posts/pages/HomePage/HomePage.vue'),
         meta: { isPublic: true, title: uk.home.title, ...noIndexMeta }
+    },
+    {
+        path: '/edit/:postId(\\d+)',
+        name: PostRouteNames.EDIT_POST,
+        component: () => import('@/modules/posts/pages/EditPostPage/EditPostPage.vue'),
+        meta: { requiresAuth: true, title: uk.posts.editor.title, ...noIndexMeta }
     },
     {
         path: '/forgot-password',
@@ -78,7 +85,7 @@ router.beforeEach(async (to, _from, next) => {
         try {
             const user = await authStore.getProfile();
             if (user?.isEmailVerified) {
-                return next({ name: AuthRouteNames.HOME });
+                return next({ name: PostRouteNames.HOME });
             } else {
                 return next({ name: AuthRouteNames.VERIFICATION });
             }
@@ -112,12 +119,12 @@ router.beforeEach(async (to, _from, next) => {
     const isVerified = authStore.isVerified;
 
     if (to.name === 'landing' && isAuthenticated) {
-        return next({ name: AuthRouteNames.HOME });
+        return next({ name: PostRouteNames.HOME });
     }
 
     if (to.meta.guestOnly && isAuthenticated) {
         if (isVerified) {
-            return next({ name: AuthRouteNames.HOME });
+            return next({ name: PostRouteNames.HOME });
         } else {
             return next({ name: AuthRouteNames.VERIFICATION });
         }

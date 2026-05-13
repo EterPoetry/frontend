@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
+import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { uk } from '@/shared/locales/uk';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import LandingFeatureCard from '@/modules/auth/components/LandingFeatureCard/LandingFeatureCard.vue';
@@ -33,7 +34,7 @@ const openRegister = (): void => {
 };
 
 const openApp = (): void => {
-  router.push({ name: AuthRouteNames.HOME });
+  router.push({ name: PostRouteNames.HOME });
 };
 </script>
 

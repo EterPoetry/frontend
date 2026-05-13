@@ -5,6 +5,7 @@ export interface User {
     email: string;
     googleId: string | null;
     photo: string | null;
+    isPremium?: boolean;
     isEmailVerified: boolean;
     createdAt: string;
 }
