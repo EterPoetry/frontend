@@ -81,10 +81,11 @@ const {
 
     <div class="register-form-actions">
       <BaseButton
-          :label="isLoading ? common.labels.loading : register.labels.submit"
+          :label="register.labels.submit"
           type="submit"
           variant="primary"
           :disabled="isLoading"
+          :is-loading="isLoading"
       />
     </div>
 

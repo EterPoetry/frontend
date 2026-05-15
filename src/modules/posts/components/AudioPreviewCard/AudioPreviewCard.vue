@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import closeIconUrl from '@/shared/assets/icons/ui/close.svg';
+import playIconUrl from '@/shared/assets/icons/ui/play.svg';
+import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
+import AudioProgressBar from '@/shared/components/AudioProgressBar/AudioProgressBar.vue';
+import { AudioPreviewCardProps } from '@/modules/posts/interfaces/audio-preview-card-props.interface';
 import { uk } from '@/shared/locales/uk';
 import { formatSecondsToClock } from '@/shared/utils/time.utils';
 import './AudioPreviewCard.css';
 
-const props = withDefaults(defineProps<{
-    src: string;
-    title: string;
-    disabled?: boolean;
-    showRemove?: boolean;
-}>(), {
+const props = withDefaults(defineProps<AudioPreviewCardProps>(), {
     disabled: false,
     showRemove: true,
 });
@@ -90,16 +89,13 @@ onBeforeUnmount(() => {
     <div class="audio-preview-card__top">
       <button
           type="button"
-          class="audio-preview-card__play"
-          :class="{ 'audio-preview-card__play--paused': isPlaying }"
+          class="audio-preview-card__play audio-play-button"
+          :class="{ 'audio-play-button--active': isPlaying }"
           :aria-label="isPlaying ? uk.posts.audio.pause : uk.posts.audio.play"
           @click="togglePlayback"
       >
-        <span v-if="isPlaying" class="audio-preview-card__pause-glyph" aria-hidden="true">
-          <span />
-          <span />
-        </span>
-        <span v-else class="audio-preview-card__play-glyph" aria-hidden="true" />
+        <img v-if="isPlaying" :src="pauseLightIconUrl" alt="" class="audio-play-button__pause-icon" />
+        <img v-else :src="playIconUrl" :alt="uk.posts.audio.play" class="audio-play-button__play-icon" />
       </button>
 
       <div class="audio-preview-card__body">
@@ -117,14 +113,11 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="audio-preview-card__progress">
-      <input
+      <AudioProgressBar
           v-model="progress"
-          type="range"
-          min="0"
-          max="100"
-          step="0.1"
-          class="audio-preview-card__slider"
-          :style="{ '--slider-progress': `${progress}%` }"
+          :ariaLabel="uk.posts.player.seek"
+          density="default"
+          :disabled="disabled"
       />
     </div>
   </div>

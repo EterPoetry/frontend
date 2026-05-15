@@ -18,6 +18,10 @@
     padding-top: 118px;
 }
 
+.app-shell--with-player .app-shell__content {
+    padding-bottom: 164px;
+}
+
 @media (max-width: 1080px) {
     .app-shell {
         flex-direction: column;
@@ -36,16 +40,28 @@
     .app-shell__content {
         padding-bottom: 88px;
     }
+
+    .app-shell--with-player .app-shell__content {
+        padding-bottom: 248px;
+    }
 }
 
 @media (max-width: 720px) {
     .app-shell__content {
         padding-top: 156px;
     }
+
+    .app-shell--with-player .app-shell__content {
+        padding-bottom: 372px;
+    }
 }
 
 @media (max-width: 560px) {
     .app-shell__content {
         padding-top: 148px;
+    }
+
+    .app-shell--with-player .app-shell__content {
+        padding-bottom: calc(392px + env(safe-area-inset-bottom, 0px));
     }
 }

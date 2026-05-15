@@ -52,10 +52,11 @@ const {
 
     <div class="login-form-actions">
       <BaseButton
-          :label="isLoading ? common.labels.loading : login.labels.submit"
+          :label="login.labels.submit"
           type="submit"
           variant="primary"
           :disabled="isLoading"
+          :is-loading="isLoading"
       />
     </div>
 

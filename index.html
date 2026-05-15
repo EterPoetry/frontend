@@ -25,6 +25,13 @@
     <title>Eter — аудіопоезія українською</title>
 </head>
 <body>
+<script>
+  (function () {
+    var s = localStorage.getItem('app-theme');
+    var theme = s === 'dark' || s === 'light' ? s : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (theme === 'dark') document.documentElement.dataset.theme = 'dark';
+  })();
+</script>
 <div id="app"></div>
 <script type="module" src="/src/main.ts"></script>
 </body>

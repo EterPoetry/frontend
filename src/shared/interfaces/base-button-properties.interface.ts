@@ -3,4 +3,5 @@ export interface BaseButtonProperties {
     type: 'button' | 'submit';
     variant: 'primary' | 'secondary';
     disabled: boolean;
+    isLoading?: boolean;
 }

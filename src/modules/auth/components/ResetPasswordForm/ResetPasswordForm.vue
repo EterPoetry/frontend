@@ -56,10 +56,11 @@ const {
 
       <div class="reset-password-form-actions">
         <BaseButton
-            :label="isLoading ? common.labels.loading : resetPassword.labels.submit"
+            :label="resetPassword.labels.submit"
             type="submit"
             variant="primary"
             :disabled="isLoading"
+            :is-loading="isLoading"
         />
         <BaseButton
             :label="common.labels.cancel"

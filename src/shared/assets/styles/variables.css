@@ -1,3 +1,13 @@
+html,
+body {
+    background-color: #f0ebe1;
+}
+
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] html {
+    background-color: #171311;
+}
+
 :root {
     --color-bg-page: #f0ebe1;
     --color-bg-card: #f7f3ec;
@@ -43,8 +53,8 @@
     --color-bg-sidebar: linear-gradient(180deg, rgba(31, 24, 21, 0.98), rgba(23, 18, 16, 0.98));
     --color-bg-modal: linear-gradient(180deg, rgba(35, 28, 25, 0.98), rgba(25, 20, 18, 0.98));
     --color-backdrop: rgba(5, 4, 4, 0.56);
-    --color-primary: #c78354;
-    --color-primary-hover: #d99b70;
+    --color-primary: #8b4a2e;
+    --color-primary-hover: #a06e4e;
     --color-text-main: #eadfce;
     --color-text-strong: #f5ecdf;
     --color-text-muted: #bda993;

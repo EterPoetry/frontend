@@ -59,9 +59,9 @@ const handleNavClick = async (item: AppNavigationItem): Promise<void> => {
 
 <template>
   <aside class="app-sidebar">
-    <div class="app-sidebar__brand">
+    <RouterLink class="app-sidebar__brand" to="/app">
       <img :src="logoUrl" :alt="uk.common.appName" class="app-sidebar__logo" />
-    </div>
+    </RouterLink>
 
     <nav class="app-sidebar__nav" :aria-label="uk.home.nav.ariaLabel">
       <button

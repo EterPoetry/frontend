@@ -20,10 +20,10 @@ const handleLoginNavigate = (): void => {
 <template>
   <div class="register-page">
     <div class="register-card">
-      <div class="register-logo-section">
+      <RouterLink class="register-logo-section" to="/">
         <img :src="logoUrl" :alt="uk.common.appName" class="register-logo" />
         <div class="register-divider-line"></div>
-      </div>
+      </RouterLink>
 
       <RegisterForm
           @register="handleRegisterSuccess"

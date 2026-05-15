@@ -23,10 +23,10 @@ const handleLoginNavigate = (): void => {
 <template>
   <div class="reset-password-page">
     <div class="reset-password-card">
-      <div class="reset-password-logo-section">
+      <RouterLink class="reset-password-logo-section" to="/app">
         <img :src="logoUrl" :alt="uk.common.appName" class="reset-password-logo" />
         <div class="reset-password-divider-line"></div>
-      </div>
+      </RouterLink>
 
       <div v-if="isSubmitted" class="reset-success-container">
         <p class="reset-success-text">{{ uk.auth.resetPassword.info.success }}</p>

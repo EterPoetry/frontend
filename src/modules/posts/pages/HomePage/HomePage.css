@@ -2,12 +2,18 @@
     min-height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 28px 0 40px;
+    padding: 32px 32px 52px;
     position: relative;
 }
 
 @media (max-width: 1080px) {
     .home-page {
-        padding: 28px 0 40px;
+        padding: 28px 24px 44px;
+    }
+}
+
+@media (max-width: 640px) {
+    .home-page {
+        padding: 22px 16px 36px;
     }
 }

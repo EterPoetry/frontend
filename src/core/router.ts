@@ -5,6 +5,7 @@ import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { uk } from "@/shared/locales/uk";
 import { updateSeoMeta } from '@/core/seo';
 import { SEO_ROUTES } from '@/shared/constants/seo.constants';
+import { isRouteNavigating } from '@/core/navigation-loading';
 
 const noIndexMeta = SEO_ROUTES.noIndex;
 
@@ -69,12 +70,18 @@ const router = createRouter({
 });
 
 router.afterEach((to) => {
+    isRouteNavigating.value = false;
     updateSeoMeta(to);
+});
+
+router.onError(() => {
+    isRouteNavigating.value = false;
 });
 
 let isInitialAuthenticationChecked = false;
 
 router.beforeEach(async (to, _from, next) => {
+    isRouteNavigating.value = true;
     const authStore = useAuthStore();
 
     const googleAccessToken = to.query.accessToken as string;

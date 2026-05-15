@@ -3,6 +3,7 @@ import { ComponentPublicInstance } from 'vue';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import BaseCheckbox from '@/shared/components/BaseCheckbox/BaseCheckbox.vue';
 import BaseField from '@/shared/components/BaseField/BaseField.vue';
+import BaseLoader from '@/shared/components/BaseLoader/BaseLoader.vue';
 import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert.vue';
 import AudioPreviewCard from '@/modules/posts/components/AudioPreviewCard/AudioPreviewCard.vue';
 import { SUPPORTED_AUDIO_ACCEPT } from '@/modules/posts/constants/post-audio.constants';
@@ -121,7 +122,11 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
             :disabled="isBusy"
             @click="openReplaceAudioPicker"
         >
-          <span v-if="isAudioRefreshBusy" class="post-editor__replace-spinner" aria-hidden="true" />
+          <BaseLoader
+              v-if="isAudioRefreshBusy"
+              size="sm"
+              tone="primary"
+          />
           <img v-else :src="refreshIconUrl" :alt="uk.posts.editor.replaceAudio" />
         </button>
 
@@ -248,6 +253,7 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
             type="button"
             variant="primary"
             :disabled="isBusy"
+            :is-loading="isBusy"
             @click="submit"
         />
       </div>

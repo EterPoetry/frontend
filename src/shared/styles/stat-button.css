@@ -1,0 +1,18 @@
+.stat-button {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: color 180ms ease, opacity 180ms ease;
+}
+
+.stat-button:hover:not(:disabled),
+.stat-button--active {
+    color: var(--color-primary);
+}
+
+.stat-button:disabled {
+    cursor: default;
+    opacity: 0.72;
+}

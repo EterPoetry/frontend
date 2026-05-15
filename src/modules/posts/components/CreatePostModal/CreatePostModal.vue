@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ComponentPublicInstance } from 'vue';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
+import BaseLoader from '@/shared/components/BaseLoader/BaseLoader.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog.vue';
 import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert.vue';
 import AudioPreviewCard from '@/modules/posts/components/AudioPreviewCard/AudioPreviewCard.vue';
@@ -167,8 +168,7 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
           <ErrorAlert v-if="errorMessage" :message="errorMessage" />
 
           <div v-if="isProcessing" class="create-post-modal__processing">
-            <div class="create-post-modal__spinner" />
-            <p>{{ uk.posts.modal.processing }}</p>
+            <BaseLoader :label="uk.posts.modal.processing" tone="muted" />
           </div>
 
           <div class="create-post-modal__actions">
@@ -184,6 +184,7 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
                 type="button"
                 variant="primary"
                 :disabled="!canSubmit"
+                :is-loading="isSubmitting"
                 @click="submit"
             />
           </div>

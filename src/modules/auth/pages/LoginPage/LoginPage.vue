@@ -31,10 +31,10 @@ const handleRegister = (): void => {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <div class="login-logo-section">
+      <RouterLink class="login-logo-section" to="/">
         <img :src="logoUrl" :alt="uk.common.appName" class="login-logo" />
         <div class="login-divider-line"></div>
-      </div>
+      </RouterLink>
 
       <LoginForm
           @login="handleLoginSuccess"

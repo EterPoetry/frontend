@@ -16,10 +16,10 @@ const handleLoginNavigate = (): void => {
 <template>
   <div class="forgot-password-page">
     <div class="forgot-password-card">
-      <div class="forgot-password-logo-section">
+      <RouterLink class="forgot-password-logo-section" to="/app">
         <img :src="logoUrl" :alt="uk.common.appName" class="forgot-password-logo" />
         <div class="forgot-password-divider-line"></div>
-      </div>
+      </RouterLink>
 
       <ForgotPasswordForm @login="handleLoginNavigate" />
     </div>

@@ -32,9 +32,10 @@ api.interceptors.response.use(
         const originalRequest = error.config as CustomRequestConfig;
         const authStore = useAuthStore();
         const currentRouteMeta = router.currentRoute.value.meta;
+        const token = localStorage.getItem('token');
 
         if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-            if (currentRouteMeta.skipAuthRefresh || originalRequest.url?.includes('/auth/refresh')) {
+            if (!token || currentRouteMeta.skipAuthRefresh || originalRequest.url?.includes('/auth/refresh')) {
                 return Promise.reject(error);
             }
 

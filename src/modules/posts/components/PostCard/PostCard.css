@@ -1,0 +1,376 @@
+@import '../../../../shared/styles/audio-play-button.css';
+@import '../../../../shared/styles/stat-button.css';
+
+.post-card {
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--color-border-soft) 185%, var(--color-primary) 10%);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--color-bg-card-strong) 96%, #fff 4%);
+    box-shadow:
+        0 10px 24px color-mix(in srgb, var(--color-shadow-soft) 42%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--color-bg-card-strong) 22%, var(--color-primary) 6%);
+    transition:
+        border-color 180ms ease,
+        background 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.post-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    background: transparent;
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+    transition:
+        width 180ms ease,
+        background 180ms ease;
+}
+
+.post-card--active {
+    border-color: color-mix(in srgb, var(--color-border-soft) 135%, var(--color-primary) 24%);
+    box-shadow:
+        0 12px 28px color-mix(in srgb, var(--color-shadow-soft) 52%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+.post-card--active::before {
+    width: 4px;
+    background: var(--color-primary);
+}
+
+.post-card__main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 32px;
+    padding: 18px 24px;
+}
+
+.post-card__meta-block {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.post-card__title {
+    margin: 0;
+    color: var(--color-text-strong);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.post-card__meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.post-card__dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+.post-card__origin-author {
+    color: var(--color-text-muted);
+}
+
+.post-card__author {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.post-card__author-photo,
+.post-card__author-fallback {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.post-card__author-photo {
+    object-fit: cover;
+}
+
+.post-card__author-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface-accent-strong);
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.post-card__author-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.post-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    min-height: 1.15rem;
+    align-items: center;
+}
+
+.post-card__tags--empty {
+    visibility: hidden;
+}
+
+.post-card__tag {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.post-card__side {
+    display: flex;
+    align-items: center;
+    gap: 44px;
+    flex-shrink: 0;
+}
+
+.post-card__stats {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.post-card__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+
+.post-card__stat-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.65;
+    flex-shrink: 0;
+    object-fit: contain;
+    display: block;
+}
+
+.post-card__stat-icon--heart {
+    transform: translateY(-0.5px);
+}
+
+.post-card__stat-icon--comment {
+    width: 21px;
+    height: 21px;
+    transform: translateY(-0.5px);
+}
+
+.post-card__stat-icon--eye {
+    width: 24px;
+    height: 24px;
+    transform: translateY(-0.5px);
+}
+
+.post-card__stat-icon--liked {
+    opacity: 1;
+}
+
+.post-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    color: var(--color-text-muted);
+}
+
+.post-card__duration {
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+    .post-card__main {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .post-card__side {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .post-card {
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .post-card__main {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+        gap: 0;
+    }
+
+    .post-card__meta-block {
+        gap: 10px;
+        padding: 16px 16px 14px;
+    }
+
+    .post-card__title {
+        font-size: 1.1rem;
+        line-height: 1.28;
+        overflow-wrap: anywhere;
+    }
+
+    .post-card__meta-row {
+        gap: 8px;
+    }
+
+    .post-card__author {
+        flex: 1 1 100%;
+    }
+
+    .post-card__author-name {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+    }
+
+    .post-card__tags {
+        gap: 6px 12px;
+        min-height: 0;
+    }
+
+    .post-card__side {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0;
+        padding: 10px 16px 14px;
+        border-top: 1px solid color-mix(in srgb, var(--color-border-soft) 140%, transparent);
+        background: transparent;
+    }
+
+    .post-card__stats {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+        white-space: nowrap;
+    }
+
+    .post-card__stat {
+        min-width: 0;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        font-size: 0.9rem;
+    }
+
+    .post-card__actions {
+        min-width: auto;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        padding-left: 14px;
+    }
+
+    .post-card__duration {
+        font-size: 0.84rem;
+        letter-spacing: 0.04em;
+    }
+}
+
+@media (max-width: 420px) {
+    .post-card__meta-row {
+        align-items: flex-start;
+    }
+
+    .post-card__dot {
+        display: none;
+    }
+
+    .post-card__origin-author {
+        width: 100%;
+    }
+
+    .post-card__meta-block {
+        padding: 15px 14px 13px;
+    }
+
+    .post-card__stats {
+        gap: 12px;
+    }
+
+    .post-card__stat {
+        padding: 0;
+    }
+
+    .post-card__side {
+        padding: 10px 14px 13px;
+    }
+
+    .post-card__actions {
+        padding-left: 12px;
+    }
+}
+
+:root[data-theme='dark'] .post-card {
+    background: var(--color-bg-card-strong);
+    border-color: color-mix(in srgb, var(--color-border-soft) 155%, var(--color-primary) 12%);
+    box-shadow:
+        0 12px 26px color-mix(in srgb, var(--color-shadow-strong) 62%, transparent),
+        0 0 0 1px rgba(248, 239, 229, 0.04);
+}
+
+:root[data-theme='dark'] .post-card--active {
+    border-color: color-mix(in srgb, var(--color-primary) 24%, rgba(248, 239, 229, 0.08));
+    box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.42),
+        0 0 0 1px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+:root[data-theme='dark'] .post-card--active::before {
+    background: color-mix(in srgb, var(--color-primary) 74%, #f0dcc8 26%);
+}
+
+:root[data-theme='dark'] .post-card__side {
+    border-top-color: rgba(248, 239, 229, 0.08);
+    background: transparent;
+}
+
+:root[data-theme='dark'] .post-card__stat {
+    background: transparent;
+}
+
+:root[data-theme='dark'] .post-card__stat-icon:not(.post-card__stat-icon--liked) {
+    filter: brightness(0) saturate(100%) invert(84%) sepia(10%) saturate(286%) hue-rotate(343deg) brightness(93%) contrast(92%);
+}

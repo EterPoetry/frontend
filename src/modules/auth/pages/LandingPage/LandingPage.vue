@@ -3,13 +3,17 @@ import { useRouter } from 'vue-router';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { uk } from '@/shared/locales/uk';
+import { useTheme } from '@/shared/composables/useTheme';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import LandingFeatureCard from '@/modules/auth/components/LandingFeatureCard/LandingFeatureCard.vue';
 import LandingStatementCard from '@/modules/auth/components/LandingStatementCard/LandingStatementCard.vue';
 import logoUrl from '@/shared/assets/icons/eter-logo.svg';
+import moonIconUrl from '@/shared/assets/icons/ui/moon.svg';
+import sunIconUrl from '@/shared/assets/icons/ui/sun.svg';
 import './LandingPage.css';
 
 const router = useRouter();
+const { theme, toggleTheme } = useTheme();
 
 const writerFeatures = [
   { icon: 'audio', ...uk.landing.how.writer.record },
@@ -40,6 +44,19 @@ const openApp = (): void => {
 
 <template>
   <div class="landing-page">
+    <button
+        type="button"
+        class="landing-theme-toggle"
+        :aria-label="uk.home.themeLabel"
+        @click="toggleTheme"
+    >
+      <img
+          :src="theme === 'dark' ? sunIconUrl : moonIconUrl"
+          :alt="uk.home.themeLabel"
+          class="landing-theme-toggle__icon"
+      />
+    </button>
+
     <main>
       <section id="top" class="landing-hero" aria-labelledby="landing-title">
         <div class="landing-hero-content">

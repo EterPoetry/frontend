@@ -58,10 +58,11 @@ const {
 
       <div class="forgot-password-actions">
         <BaseButton
-            :label="isLoading ? common.labels.loading : forgotPassword.labels.submit"
+            :label="forgotPassword.labels.submit"
             type="submit"
             variant="primary"
             :disabled="isLoading"
+            :is-loading="isLoading"
         />
         <BaseButton
             :label="common.labels.cancel"
