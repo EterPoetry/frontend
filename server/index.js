@@ -278,6 +278,8 @@ const normalizeMeta = (req, meta, routePath) => {
         url: getAbsoluteUrl(req, meta?.url, routeUrl),
         canonical: getAbsoluteUrl(req, meta?.canonical, routeUrl),
         robots: getNormalizedString(meta?.robots) || defaultMeta.robots,
+        metaAuthor: normalizeDisplayText(meta?.originAuthorName || meta?.authorName) || 'Eter',
+        metaPublisher: 'Eter',
     };
 };
 
@@ -331,6 +333,7 @@ const renderStructuredData = (meta) => {
         headline: meta.contentTitle || meta.title,
         description: meta.contentDescription || meta.description,
         inLanguage: 'uk',
+        ...(meta.publishedTime ? { datePublished: meta.publishedTime } : {}),
         ...(meta.originAuthorName || meta.authorName
             ? {
                 author: {
@@ -339,6 +342,11 @@ const renderStructuredData = (meta) => {
                 },
             }
             : {}),
+        publisher: {
+            '@type': 'Organization',
+            name: 'Eter',
+            url: siteUrl,
+        },
         ...(meta.audioFileUrl
             ? {
                 audio: {
@@ -397,6 +405,8 @@ const renderIndexWithMeta = async (meta, options = {}) => {
     const replacements = {
         __META_TITLE__: meta.title,
         __META_DESCRIPTION__: meta.description,
+        __META_AUTHOR__: meta.metaAuthor,
+        __META_PUBLISHER__: meta.metaPublisher,
         __META_TYPE__: meta.type,
         __META_IMAGE__: meta.image,
         __META_IMAGE_ALT__: meta.imageAlt,
