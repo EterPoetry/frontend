@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://eter.pp.ua/sitemap.xml
+Sitemap: https://eter.pp.ua/sitemap-index.xml
