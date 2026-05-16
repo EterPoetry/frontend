@@ -40,9 +40,9 @@ const metaApiTimeoutMs = requireNumberEnv('META_API_TIMEOUT_MS');
 const defaultMeta = {
     title: 'Eter — аудіопоезія українською',
     description: 'Eter — українська платформа аудіопоезії для публікації та прослуховування віршів голосом разом із текстом.',
-    image: `${siteUrl}/og-image.svg`,
+    image: `${siteUrl}/og-image.png`,
     imageAlt: 'Eter — українська платформа аудіопоезії',
-    imageType: 'image/svg+xml',
+    imageType: 'image/png',
     url: siteUrl,
     canonical: siteUrl,
     type: 'website',

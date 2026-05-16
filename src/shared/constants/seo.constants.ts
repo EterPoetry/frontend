@@ -1,10 +1,10 @@
 export const SEO_DEFAULTS = {
     siteUrl: 'https://eter.pp.ua',
-    imagePath: '/og-image.svg',
+    imagePath: '/og-image.png',
     imageAlt: 'Eter — українська платформа аудіопоезії',
     imageWidth: '1200',
     imageHeight: '630',
-    imageType: 'image/svg+xml',
+    imageType: 'image/png',
     siteName: 'Eter',
     title: 'Eter — аудіопоезія українською',
     titleTemplate: (title: string): string => `${title} | Eter`,
