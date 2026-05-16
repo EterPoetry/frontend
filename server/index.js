@@ -83,6 +83,11 @@ const escapeHtml = (value) => String(value ?? '')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
+const serializeJsonForHtml = (value) => JSON.stringify(value)
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026');
+
 const getAbsoluteUrl = (req, value, fallback) => {
     const rawValue = typeof value === 'string' ? value.trim() : '';
 
@@ -210,6 +215,13 @@ const getNormalizedString = (value) => {
     return value.trim();
 };
 
+const normalizeDisplayText = (value) => getNormalizedString(value)
+    .replaceAll('`', '’')
+    .replaceAll('´', '’')
+    .replaceAll('ʼ', '’')
+    .replaceAll("'", '’')
+    .replace(/([А-Яа-яІіЇїЄєҐґ])"([А-Яа-яІіЇїЄєҐґ])/g, '$1’$2');
+
 const getNormalizedParagraphs = (meta) => {
     if (Array.isArray(meta?.poemParagraphs)) {
         const paragraphs = meta.poemParagraphs
@@ -255,13 +267,14 @@ const normalizeMeta = (req, meta, routePath) => {
         audioFileUrl,
         audioMimeType: audioFileUrl ? getAudioMimeType(audioFileUrl, meta?.audioMimeType) : '',
         audioDurationSeconds: Number.isFinite(meta?.audioDurationSeconds) ? meta.audioDurationSeconds : null,
-        originAuthorName: getNormalizedString(meta?.originAuthorName),
-        authorName: getNormalizedString(meta?.authorName),
-        textSnippet: getNormalizedString(meta?.textSnippet),
-        contentTitle: getNormalizedString(meta?.contentTitle),
-        contentDescription: getNormalizedString(meta?.contentDescription),
-        poemText: getNormalizedString(meta?.poemText),
-        poemParagraphs,
+        originAuthorName: normalizeDisplayText(meta?.originAuthorName),
+        authorName: normalizeDisplayText(meta?.authorName),
+        textSnippet: normalizeDisplayText(meta?.textSnippet),
+        contentTitle: normalizeDisplayText(meta?.contentTitle),
+        contentDescription: normalizeDisplayText(meta?.contentDescription),
+        poemText: normalizeDisplayText(meta?.poemText),
+        poemParagraphs: poemParagraphs.map((paragraph) => normalizeDisplayText(paragraph)),
+        publishedTime: getNormalizedString(meta?.publishedTime || meta?.createdAt),
         url: getAbsoluteUrl(req, meta?.url, routeUrl),
         canonical: getAbsoluteUrl(req, meta?.canonical, routeUrl),
         robots: getNormalizedString(meta?.robots) || defaultMeta.robots,
@@ -284,6 +297,71 @@ const renderAudioTags = (meta) => {
     return tags.join('\n    ');
 };
 
+const renderArticleTags = (meta) => {
+    if (meta.type !== 'article') {
+        return '';
+    }
+
+    const tags = [];
+    const articleAuthor = meta.originAuthorName || meta.authorName;
+
+    if (articleAuthor) {
+        tags.push(`<meta property="article:author" content="${escapeHtml(articleAuthor)}" />`);
+    }
+
+    if (meta.publishedTime) {
+        tags.push(`<meta property="article:published_time" content="${escapeHtml(meta.publishedTime)}" />`);
+    }
+
+    ['українська поезія', 'аудіопоезія'].forEach((tag) => {
+        tags.push(`<meta property="article:tag" content="${escapeHtml(tag)}" />`);
+    });
+
+    return tags.join('\n    ');
+};
+
+const renderStructuredData = (meta) => {
+    if (meta.type !== 'article') {
+        return '';
+    }
+
+    const structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        headline: meta.contentTitle || meta.title,
+        description: meta.contentDescription || meta.description,
+        inLanguage: 'uk',
+        ...(meta.originAuthorName || meta.authorName
+            ? {
+                author: {
+                    '@type': 'Person',
+                    name: meta.originAuthorName || meta.authorName,
+                },
+            }
+            : {}),
+        ...(meta.audioFileUrl
+            ? {
+                audio: {
+                    '@type': 'AudioObject',
+                    contentUrl: meta.audioFileUrl,
+                    ...(meta.audioMimeType ? { encodingFormat: meta.audioMimeType } : {}),
+                },
+            }
+            : {}),
+        url: meta.url,
+    };
+
+    return `<script type="application/ld+json">${serializeJsonForHtml(structuredData)}</script>`;
+};
+
+const getAudioSourceType = (audioMimeType) => {
+    if (audioMimeType === 'audio/opus') {
+        return 'audio/ogg; codecs=opus';
+    }
+
+    return audioMimeType || '';
+};
+
 const renderPostBody = (meta) => {
     const heading = escapeHtml(meta.contentTitle || meta.title);
     const descriptionBlock = meta.contentDescription
@@ -297,9 +375,10 @@ const renderPostBody = (meta) => {
             .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
             .join('\n          ')}\n        </section>`
         : '';
-    const audioTypeAttribute = meta.audioMimeType ? ` type="${escapeHtml(meta.audioMimeType)}"` : '';
+    const audioSourceType = getAudioSourceType(meta.audioMimeType);
+    const audioTypeAttribute = audioSourceType ? ` type="${escapeHtml(audioSourceType)}"` : '';
     const audioBlock = meta.audioFileUrl
-        ? `\n        <audio controls preload="none" src="${escapeHtml(meta.audioFileUrl)}"${audioTypeAttribute}></audio>`
+        ? `\n        <audio controls preload="none">\n          <source src="${escapeHtml(meta.audioFileUrl)}"${audioTypeAttribute}>\n        </audio>`
         : '';
 
     return `<main><article><h1>${heading}</h1>${descriptionBlock}${originAuthorBlock}${poemSection}${audioBlock}</article></main>`;
@@ -323,6 +402,8 @@ const renderIndexWithMeta = async (meta, options = {}) => {
         __META_IMAGE_ALT__: meta.imageAlt,
         __META_IMAGE_TYPE__: meta.imageType,
         __META_AUDIO_TAGS__: renderAudioTags(meta),
+        __META_ARTICLE_TAGS__: renderArticleTags(meta),
+        __META_STRUCTURED_DATA__: renderStructuredData(meta),
         __META_URL__: meta.url,
         __META_CANONICAL__: meta.canonical,
         __META_ROBOTS__: meta.robots,
@@ -332,7 +413,12 @@ const renderIndexWithMeta = async (meta, options = {}) => {
     return Object.entries(replacements).reduce(
         (html, [token, value]) => html.replaceAll(
             token,
-            token === '__META_AUDIO_TAGS__' || token === '__APP_HTML__' ? value : escapeHtml(value),
+            token === '__META_AUDIO_TAGS__'
+                || token === '__META_ARTICLE_TAGS__'
+                || token === '__META_STRUCTURED_DATA__'
+                || token === '__APP_HTML__'
+                ? value
+                : escapeHtml(value),
         ),
         template,
     );
