@@ -160,12 +160,28 @@ const getAudioMimeType = (audioUrl, explicitType) => {
         return 'audio/ogg';
     }
 
+    if (pathname.endsWith('.oga')) {
+        return 'audio/ogg';
+    }
+
+    if (pathname.endsWith('.opus')) {
+        return 'audio/opus';
+    }
+
     if (pathname.endsWith('.m4a')) {
         return 'audio/mp4';
     }
 
     if (pathname.endsWith('.aac')) {
         return 'audio/aac';
+    }
+
+    if (pathname.endsWith('.flac')) {
+        return 'audio/flac';
+    }
+
+    if (pathname.endsWith('.weba') || pathname.endsWith('.webm')) {
+        return 'audio/webm';
     }
 
     return '';
@@ -186,31 +202,69 @@ const getRequestOrigin = (req) => {
 
 const getRequestUrl = (req) => new URL(req.url || '/', getRequestOrigin(req));
 
+const getNormalizedString = (value) => {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    return value.trim();
+};
+
+const getNormalizedParagraphs = (meta) => {
+    if (Array.isArray(meta?.poemParagraphs)) {
+        const paragraphs = meta.poemParagraphs
+            .map((paragraph) => getNormalizedString(paragraph))
+            .filter(Boolean);
+
+        if (paragraphs.length > 0) {
+            return paragraphs;
+        }
+    }
+
+    const poemText = getNormalizedString(meta?.poemText);
+
+    if (!poemText) {
+        return [];
+    }
+
+    return poemText
+        .split(/\n\s*\n/g)
+        .map((paragraph) => paragraph.trim())
+        .filter(Boolean);
+};
+
 const normalizeMeta = (req, meta, routePath) => {
     const routeUrl = new URL(routePath, getRequestOrigin(req)).toString();
-    const title = typeof meta?.title === 'string' && meta.title.trim() ? meta.title.trim() : defaultMeta.title;
-    const description = typeof meta?.description === 'string' && meta.description.trim()
-        ? meta.description.trim()
-        : defaultMeta.description;
+    const title = getNormalizedString(meta?.title) || defaultMeta.title;
+    const description = getNormalizedString(meta?.description) || defaultMeta.description;
     const type = typeof meta?.type === 'string' && ['website', 'article', 'profile'].includes(meta.type)
         ? meta.type
         : defaultMeta.type;
 
     const image = getAbsoluteUrl(req, meta?.image, defaultMeta.image);
     const audioFileUrl = getAbsoluteUrl(req, meta?.audioFileUrl, '');
+    const poemParagraphs = getNormalizedParagraphs(meta);
 
     return {
         title,
         description,
         type,
         image,
-        imageAlt: typeof meta?.imageAlt === 'string' && meta.imageAlt.trim() ? meta.imageAlt.trim() : defaultMeta.imageAlt,
+        imageAlt: getNormalizedString(meta?.imageAlt) || defaultMeta.imageAlt,
         imageType: getImageType(image, meta?.imageType),
         audioFileUrl,
         audioMimeType: audioFileUrl ? getAudioMimeType(audioFileUrl, meta?.audioMimeType) : '',
+        audioDurationSeconds: Number.isFinite(meta?.audioDurationSeconds) ? meta.audioDurationSeconds : null,
+        originAuthorName: getNormalizedString(meta?.originAuthorName),
+        authorName: getNormalizedString(meta?.authorName),
+        textSnippet: getNormalizedString(meta?.textSnippet),
+        contentTitle: getNormalizedString(meta?.contentTitle),
+        contentDescription: getNormalizedString(meta?.contentDescription),
+        poemText: getNormalizedString(meta?.poemText),
+        poemParagraphs,
         url: getAbsoluteUrl(req, meta?.url, routeUrl),
         canonical: getAbsoluteUrl(req, meta?.canonical, routeUrl),
-        robots: typeof meta?.robots === 'string' && meta.robots.trim() ? meta.robots.trim() : defaultMeta.robots,
+        robots: getNormalizedString(meta?.robots) || defaultMeta.robots,
     };
 };
 
@@ -230,7 +284,36 @@ const renderAudioTags = (meta) => {
     return tags.join('\n    ');
 };
 
-const renderIndexWithMeta = async (meta) => {
+const renderPostBody = (meta) => {
+    const heading = escapeHtml(meta.contentTitle || meta.title);
+    const descriptionBlock = meta.contentDescription
+        ? `\n        <p class="post-description">${escapeHtml(meta.contentDescription)}</p>`
+        : '';
+    const originAuthorBlock = meta.originAuthorName
+        ? `\n        <p>Original author: ${escapeHtml(meta.originAuthorName)}</p>`
+        : '';
+    const poemSection = meta.poemParagraphs.length > 0
+        ? `\n        <section>\n          <h2>Текст поезії</h2>\n          ${meta.poemParagraphs
+            .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+            .join('\n          ')}\n        </section>`
+        : '';
+    const audioTypeAttribute = meta.audioMimeType ? ` type="${escapeHtml(meta.audioMimeType)}"` : '';
+    const audioBlock = meta.audioFileUrl
+        ? `\n        <audio controls preload="none" src="${escapeHtml(meta.audioFileUrl)}"${audioTypeAttribute}></audio>`
+        : '';
+
+    return `<main><article><h1>${heading}</h1>${descriptionBlock}${originAuthorBlock}${poemSection}${audioBlock}</article></main>`;
+};
+
+const renderAppHtml = (meta, options = {}) => {
+    if (options.renderPostBody) {
+        return `<div id="app">${renderPostBody(meta)}</div>`;
+    }
+
+    return '<div id="app"></div>';
+};
+
+const renderIndexWithMeta = async (meta, options = {}) => {
     const template = await getIndexTemplate();
     const replacements = {
         __META_TITLE__: meta.title,
@@ -243,10 +326,14 @@ const renderIndexWithMeta = async (meta) => {
         __META_URL__: meta.url,
         __META_CANONICAL__: meta.canonical,
         __META_ROBOTS__: meta.robots,
+        __APP_HTML__: renderAppHtml(meta, options),
     };
 
     return Object.entries(replacements).reduce(
-        (html, [token, value]) => html.replaceAll(token, token === '__META_AUDIO_TAGS__' ? value : escapeHtml(value)),
+        (html, [token, value]) => html.replaceAll(
+            token,
+            token === '__META_AUDIO_TAGS__' || token === '__APP_HTML__' ? value : escapeHtml(value),
+        ),
         template,
     );
 };
@@ -276,7 +363,9 @@ const fetchJson = async (url) => {
     });
 
     if (!response.ok) {
-        throw new Error(`Meta API responded with ${response.status}`);
+        const error = new Error(`Meta API responded with ${response.status}`);
+        error.status = response.status;
+        throw error;
     }
 
     return response.json();
@@ -314,8 +403,8 @@ const sendHtml = async (res, html, statusCode = 200) => {
     res.end(html);
 };
 
-const sendFallbackHtml = async (req, res, routePath = '/') => {
-    const html = await renderIndexWithMeta(normalizeMeta(req, defaultMeta, routePath));
+const sendFallbackHtml = async (req, res, routePath = '/', options = {}) => {
+    const html = await renderIndexWithMeta(normalizeMeta(req, defaultMeta, routePath), options);
     await sendHtml(res, html);
 };
 
@@ -377,11 +466,17 @@ const handleRequest = async (req, res) => {
 
         try {
             const meta = await getPostMeta(req, postMatch[1], routePath);
-            const html = await renderIndexWithMeta(meta);
+            const html = await renderIndexWithMeta(meta, { renderPostBody: true });
             await sendHtml(res, html);
         } catch (error) {
             console.error(`[meta] Failed to render post ${postMatch[1]}:`, error);
-            await sendFallbackHtml(req, res, routePath);
+
+            if (error?.status === 404) {
+                await sendFallbackHtml(req, res, routePath, { renderPostBody: false });
+                return;
+            }
+
+            await sendFallbackHtml(req, res, routePath, { renderPostBody: false });
         }
 
         return;
