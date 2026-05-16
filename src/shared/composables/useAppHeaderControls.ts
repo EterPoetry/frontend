@@ -4,6 +4,7 @@ import { PostCategory } from '@/modules/posts/interfaces/post-category.interface
 import { uk } from '@/shared/locales/uk';
 
 export const useAppHeaderControls = (params: {
+    search: Ref<string>;
     categoryId: Ref<number | null>;
     sortBy: Ref<string>;
 }) => {
@@ -33,6 +34,9 @@ export const useAppHeaderControls = (params: {
 
     const isCategoryActive = computed(() => params.categoryId.value !== null);
     const isSortActive = computed(() => params.sortBy.value !== 'newest');
+    const hasActiveFilters = computed(() => params.search.value.trim() !== ''
+        || isCategoryActive.value
+        || isSortActive.value);
 
     const toggleSortMenu = (): void => {
         sortMenuOpen.value = !sortMenuOpen.value;
@@ -65,6 +69,15 @@ export const useAppHeaderControls = (params: {
 
     const clearCategory = (): void => {
         params.categoryId.value = null;
+        categoryMenuOpen.value = false;
+    };
+
+    const resetFilters = (): void => {
+        params.search.value = '';
+        params.categoryId.value = null;
+        params.sortBy.value = 'newest';
+        categorySearch.value = '';
+        sortMenuOpen.value = false;
         categoryMenuOpen.value = false;
     };
 
@@ -108,8 +121,10 @@ export const useAppHeaderControls = (params: {
         categorySearch,
         clearCategory,
         filteredCategories,
+        hasActiveFilters,
         isCategoryActive,
         isSortActive,
+        resetFilters,
         selectCategory,
         selectSortOption,
         sortMenuOpen,

@@ -42,8 +42,20 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/home',
         name: PostRouteNames.HOME,
-        component: () => import('@/modules/posts/pages/HomePage/HomePage.vue'),
-        meta: { isPublic: true, searchEnabled: true, ...SEO_ROUTES.home }
+        component: () => import('@/modules/posts/pages/PostsFeedPage/PostsFeedPage.vue'),
+        meta: { isPublic: true, searchEnabled: true, feedKind: 'popular', ...SEO_ROUTES.home }
+    },
+    {
+        path: '/subscriptions',
+        name: PostRouteNames.SUBSCRIPTIONS,
+        component: () => import('@/modules/posts/pages/PostsFeedPage/PostsFeedPage.vue'),
+        meta: { requiresAuth: true, searchEnabled: true, feedKind: 'subscriptions', ...SEO_ROUTES.subscriptions }
+    },
+    {
+        path: '/favorites',
+        name: PostRouteNames.FAVORITES,
+        component: () => import('@/modules/posts/pages/PostsFeedPage/PostsFeedPage.vue'),
+        meta: { requiresAuth: true, searchEnabled: true, feedKind: 'favorites', ...SEO_ROUTES.favorites }
     },
     {
         path: '/posts/:postId(\\d+)',

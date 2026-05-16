@@ -8,6 +8,7 @@ import sortIconUrl from '@/shared/assets/icons/ui/sort.svg';
 import moonIconUrl from '@/shared/assets/icons/ui/moon.svg';
 import sunIconUrl from '@/shared/assets/icons/ui/sun.svg';
 import bellIconUrl from '@/shared/assets/icons/ui/bell.svg';
+import closeIconUrl from '@/shared/assets/icons/ui/close.svg';
 import { useAppHeaderControls } from '@/shared/composables/useAppHeaderControls';
 import { useTheme } from '@/shared/composables/useTheme';
 import { uk } from '@/shared/locales/uk';
@@ -21,6 +22,7 @@ const { theme, toggleTheme } = useTheme();
 const route = useRoute();
 const isSearchEnabled = computed(() => route.meta.searchEnabled === true);
 const headerControls = useAppHeaderControls({
+    search,
     categoryId,
     sortBy,
 });
@@ -29,8 +31,10 @@ const {
     categorySearch,
     clearCategory,
     filteredCategories,
+    hasActiveFilters,
     isCategoryActive,
     isSortActive,
+    resetFilters,
     selectCategory,
     selectSortOption,
     sortMenuOpen,
@@ -50,6 +54,16 @@ const {
           :placeholder="uk.home.searchPlaceholder"
           class="app-header__search-input"
       />
+
+      <button
+          v-if="hasActiveFilters"
+          type="button"
+          class="app-header__search-reset"
+          :aria-label="uk.home.resetFilters"
+          @click.prevent="resetFilters"
+      >
+        <img :src="closeIconUrl" :alt="uk.home.resetFilters" class="app-header__icon-image" />
+      </button>
     </label>
 
     <div v-if="isSearchEnabled" class="app-header__tools">

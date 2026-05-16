@@ -1,4 +1,4 @@
-.home-page {
+.posts-feed-page {
     min-height: 100%;
     display: flex;
     flex-direction: column;
@@ -7,13 +7,13 @@
 }
 
 @media (max-width: 1080px) {
-    .home-page {
+    .posts-feed-page {
         padding: 28px 24px 44px;
     }
 }
 
 @media (max-width: 640px) {
-    .home-page {
+    .posts-feed-page {
         padding: 22px 16px 36px;
     }
 }

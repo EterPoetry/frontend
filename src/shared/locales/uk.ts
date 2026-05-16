@@ -193,6 +193,7 @@ export const uk = {
     home: {
         title: 'Головна',
         searchPlaceholder: 'Пошук',
+        resetFilters: 'Скинути пошук і фільтри',
         gridViewLabel: 'Перемкнути вигляд',
         themeLabel: 'Перемкнути тему',
         subscribeLabel: 'Оформити підписку',
@@ -240,6 +241,16 @@ export const uk = {
             likes: 'Вподобання',
             comments: 'Коментарі',
             play: 'Позначити як активний пост',
+        },
+        subscriptionsFeed: {
+            title: 'Підписки',
+            empty: 'Поки що немає постів від авторів, на яких ви підписані.',
+            loadFailed: 'Не вдалося завантажити стрічку підписок. Спробуйте ще раз.',
+        },
+        favoritesFeed: {
+            title: 'Улюблені',
+            empty: 'У вас ще немає вподобаних постів.',
+            loadFailed: 'Не вдалося завантажити улюблені пости. Спробуйте ще раз.',
         }
     },
     posts: {

@@ -6,13 +6,13 @@ import playsIconUrl from '@/shared/assets/icons/ui/plays.svg';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
 import commentIconUrl from '@/shared/assets/icons/ui/comment.svg';
+import PostCategoryTags from '@/modules/posts/components/PostCategoryTags/PostCategoryTags.vue';
 import { PostCardProps } from '@/modules/posts/interfaces/post-card-props.interface';
 import { PostsEvents } from '@/modules/posts/enums/posts-events.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { uk } from '@/shared/locales/uk';
 import {
     formatPostDuration,
-    formatPostTag,
 } from '@/modules/posts/utils/post-formatting.utils';
 import { getAuthorInitial } from '@/modules/posts/utils/post-author.utils';
 import { formatCompactNumber } from '@/shared/utils/number.utils';
@@ -45,11 +45,11 @@ const handleCommentClick = (): void => {
 <template>
   <article class="post-card" :class="{ 'post-card--active': isActive }">
     <div class="post-card__main">
-      <RouterLink
-          :to="{ name: PostRouteNames.POST, params: { postId: post.postId } }"
-          class="post-card__meta-link"
-      >
-        <div class="post-card__meta-block">
+      <div class="post-card__meta-block">
+        <RouterLink
+            :to="{ name: PostRouteNames.POST, params: { postId: post.postId } }"
+            class="post-card__meta-link"
+        >
           <h3 class="post-card__title">
             <span class="post-card__title-link">
               {{ post.title || 'Без назви' }}
@@ -78,22 +78,10 @@ const handleCommentClick = (): void => {
               </span>
             </span>
           </div>
+        </RouterLink>
 
-          <div
-              class="post-card__tags"
-              :class="{ 'post-card__tags--empty': !post.categories.length }"
-              :aria-hidden="!post.categories.length"
-          >
-            <span
-                v-for="category in post.categories"
-                :key="category.categoryId"
-                class="post-card__tag"
-            >
-              {{ formatPostTag(category.categoryName) }}
-            </span>
-          </div>
-        </div>
-      </RouterLink>
+        <PostCategoryTags :categories="post.categories" compact class="post-card__tags" />
+      </div>
 
       <div class="post-card__side">
         <div class="post-card__stats">

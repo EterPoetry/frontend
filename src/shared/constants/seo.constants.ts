@@ -48,6 +48,20 @@ export const SEO_ROUTES = {
         robots: SEO_ROBOTS.index,
         keywords: SEO_DEFAULTS.keywords,
     },
+    subscriptions: {
+        title: 'Підписки',
+        description: 'Стрічка нових віршів від авторів, на яких ви підписані в Eter.',
+        canonicalPath: '/subscriptions',
+        robots: SEO_ROBOTS.noIndex,
+        keywords: SEO_DEFAULTS.keywords,
+    },
+    favorites: {
+        title: 'Улюблені вірші',
+        description: 'Історія вподобаних аудіовіршів у вашому профілі Eter.',
+        canonicalPath: '/favorites',
+        robots: SEO_ROBOTS.noIndex,
+        keywords: SEO_DEFAULTS.keywords,
+    },
     post: {
         description: SEO_DEFAULTS.description,
         robots: SEO_ROBOTS.index,

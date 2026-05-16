@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { usePopularPostsFeed } from '@/modules/posts/composables/usePopularPostsFeed';
-import { useSearchPostsFeed } from '@/modules/posts/composables/useSearchPostsFeed';
-import PopularPostsSection from '@/modules/posts/components/PopularPostsSection/PopularPostsSection.vue';
-import SearchPostsSection from '@/modules/posts/components/SearchPostsSection/SearchPostsSection.vue';
 import CreatePostModal from '@/modules/posts/components/CreatePostModal/CreatePostModal.vue';
+import PostsFeedSection from '@/modules/posts/components/PostsFeedSection/PostsFeedSection.vue';
+import { usePrimaryPostsFeed } from '@/modules/posts/composables/usePrimaryPostsFeed';
+import { PrimaryPostsFeedKind } from '@/modules/posts/interfaces/primary-posts-feed-kind.type';
 import { usePostsAppShell } from '@/modules/posts/composables/usePostsAppShell';
+import { useSearchPostsFeed } from '@/modules/posts/composables/useSearchPostsFeed';
 import AppShell from '@/shared/components/AppShell/AppShell.vue';
-import './HomePage.css';
+import { AppNavigationItem } from '@/shared/constants/app-navigation';
+import { uk } from '@/shared/locales/uk';
+import './PostsFeedPage.css';
 
 const SEARCH_INPUT_DEBOUNCE_MS = 300;
 
@@ -85,42 +87,89 @@ watch([activeSearch, sortBy, categoryId], async () => {
     });
 });
 
+const feedKind = computed<PrimaryPostsFeedKind>(() => {
+    const routeFeedKind = route.meta.feedKind;
+
+    if (routeFeedKind === 'subscriptions' || routeFeedKind === 'favorites') {
+        return routeFeedKind;
+    }
+
+    return 'popular';
+});
+
+const primaryFeed = usePrimaryPostsFeed(feedKind);
+const {
+    activePostId: primaryActivePostId,
+    canLoadMore: primaryCanLoadMore,
+    errorMessage: primaryErrorMessage,
+    isInitialLoading: primaryIsInitialLoading,
+    isLoadingMore: primaryIsLoadingMore,
+    isPlaying: primaryIsPlaying,
+    likePendingPostIds: primaryLikePendingPostIds,
+    loadMoreTrigger: primaryLoadMoreTrigger,
+    posts: primaryPosts,
+    setActivePost: primarySetActivePost,
+    toggleLike: primaryToggleLike,
+} = primaryFeed;
+
 const isSearchMode = computed(() => activeSearch.value.trim() !== '' || categoryId.value !== null);
 
-const {
-    activePostId: popularActivePostId,
-    canLoadMore: popularCanLoadMore,
-    errorMessage: popularErrorMessage,
-    isInitialLoading: popularIsInitialLoading,
-    isPlaying: popularIsPlaying,
-    isLoadingMore: popularIsLoadingMore,
-    likePendingPostIds: popularLikePendingPostIds,
-    loadMoreTrigger: popularLoadMoreTrigger,
-    posts: popularPosts,
-    setActivePost: popularSetActivePost,
-    toggleLike: popularToggleLike,
-} = usePopularPostsFeed();
-
+const searchFeed = useSearchPostsFeed({ search: activeSearch, categoryId, sortBy });
 const {
     activePostId: searchActivePostId,
     canLoadMore: searchCanLoadMore,
     errorMessage: searchErrorMessage,
     isInitialLoading: searchIsInitialLoading,
-    isPlaying: searchIsPlaying,
     isLoadingMore: searchIsLoadingMore,
+    isPlaying: searchIsPlaying,
     likePendingPostIds: searchLikePendingPostIds,
     loadMoreTrigger: searchLoadMoreTrigger,
     posts: searchPosts,
     setActivePost: searchSetActivePost,
     toggleLike: searchToggleLike,
-} = useSearchPostsFeed({ search: activeSearch, categoryId, sortBy });
+} = searchFeed;
 
-const setPopularLoadMoreTrigger = (ref: Element | unknown): void => {
-    popularLoadMoreTrigger.value = ref instanceof HTMLElement ? ref : null;
+const primaryFeedTitle = computed(() => {
+    if (feedKind.value === 'subscriptions') {
+        return uk.home.subscriptionsFeed.title;
+    }
+
+    if (feedKind.value === 'favorites') {
+        return uk.home.favoritesFeed.title;
+    }
+
+    return uk.home.popularFeed.title;
+});
+
+const primaryFeedEmptyMessage = computed(() => {
+    if (feedKind.value === 'subscriptions') {
+        return uk.home.subscriptionsFeed.empty;
+    }
+
+    if (feedKind.value === 'favorites') {
+        return uk.home.favoritesFeed.empty;
+    }
+
+    return uk.home.popularFeed.empty;
+});
+
+const makeLoadMoreTriggerSetter = (target: typeof primaryLoadMoreTrigger) => (element: Element | unknown): void => {
+    target.value = element instanceof HTMLElement ? element : null;
 };
 
-const setSearchLoadMoreTrigger = (ref: Element | unknown): void => {
-    searchLoadMoreTrigger.value = ref instanceof HTMLElement ? ref : null;
+const setPrimaryLoadMoreTrigger = makeLoadMoreTriggerSetter(primaryLoadMoreTrigger);
+const setSearchLoadMoreTrigger = makeLoadMoreTriggerSetter(searchLoadMoreTrigger);
+
+const activeNavKey = computed<AppNavigationItem['key']>(() => feedKind.value === 'popular' ? 'home' : feedKind.value);
+const activeLikePendingPostIds = computed(() => isSearchMode.value ? searchLikePendingPostIds.value : primaryLikePendingPostIds.value);
+
+const handleShellLikeToggle = async (postId: number): Promise<void> => {
+    if (isSearchMode.value) {
+        await searchToggleLike(postId);
+        return;
+    }
+
+    await primaryToggleLike(postId);
 };
 </script>
 
@@ -130,18 +179,20 @@ const setSearchLoadMoreTrigger = (ref: Element | unknown): void => {
       v-model:sort-by="sortBy"
       v-model:category-id="categoryId"
       :is-authenticated="isAuthenticated"
-      :like-pending-post-ids="isSearchMode ? searchLikePendingPostIds : popularLikePendingPostIds"
-      active-nav-key="home"
+      :like-pending-post-ids="activeLikePendingPostIds"
+      :active-nav-key="activeNavKey"
       @create="handleCreateClick"
       @login="openLogin"
-      @like-toggle="isSearchMode ? searchToggleLike($event) : popularToggleLike($event)"
+      @like-toggle="handleShellLikeToggle"
       @register="openRegister"
       @logout="authStore.logout"
   >
-    <div class="home-page">
-      <SearchPostsSection
+    <div class="posts-feed-page">
+      <PostsFeedSection
           v-if="isSearchMode"
           :posts="searchPosts"
+          :title="uk.home.searchFeed.title"
+          :empty-message="uk.home.searchFeed.empty"
           :active-post-id="searchActivePostId"
           :is-playing="searchIsPlaying"
           :like-pending-post-ids="searchLikePendingPostIds"
@@ -154,19 +205,21 @@ const setSearchLoadMoreTrigger = (ref: Element | unknown): void => {
           @like-toggle="searchToggleLike"
       />
 
-      <PopularPostsSection
+      <PostsFeedSection
           v-else
-          :posts="popularPosts"
-          :active-post-id="popularActivePostId"
-          :is-playing="popularIsPlaying"
-          :like-pending-post-ids="popularLikePendingPostIds"
-          :is-initial-loading="popularIsInitialLoading"
-          :is-loading-more="popularIsLoadingMore"
-          :error-message="popularErrorMessage"
-          :can-load-more="popularCanLoadMore"
-          :set-load-more-trigger="setPopularLoadMoreTrigger"
-          @activate="popularSetActivePost"
-          @like-toggle="popularToggleLike"
+          :posts="primaryPosts"
+          :title="primaryFeedTitle"
+          :empty-message="primaryFeedEmptyMessage"
+          :active-post-id="primaryActivePostId"
+          :is-playing="primaryIsPlaying"
+          :like-pending-post-ids="primaryLikePendingPostIds"
+          :is-initial-loading="primaryIsInitialLoading"
+          :is-loading-more="primaryIsLoadingMore"
+          :error-message="primaryErrorMessage"
+          :can-load-more="primaryCanLoadMore"
+          :set-load-more-trigger="setPrimaryLoadMoreTrigger"
+          @activate="primarySetActivePost"
+          @like-toggle="primaryToggleLike"
       />
     </div>
   </AppShell>

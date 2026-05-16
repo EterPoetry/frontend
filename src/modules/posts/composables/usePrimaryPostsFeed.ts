@@ -1,17 +1,18 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, unref, watch, type Ref } from 'vue';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { usePostPlayer } from '@/modules/posts/composables/usePostPlayer';
 import { usePostsFeedLikes } from '@/modules/posts/composables/usePostsFeedLikes';
-import { usePostsStore } from '@/modules/posts/posts.store';
+import { PrimaryPostsFeedKind } from '@/modules/posts/interfaces/primary-posts-feed-kind.type';
 import {
-    POPULAR_POSTS_PAGE_LIMIT,
     POPULAR_POSTS_LOAD_MORE_ROOT_MARGIN,
+    POPULAR_POSTS_PAGE_LIMIT,
     POPULAR_SNAPSHOT_EXPIRED_ERROR_CODE,
 } from '@/modules/posts/constants/popular-posts.constants';
+import { usePostsStore } from '@/modules/posts/posts.store';
 import { uk } from '@/shared/locales/uk';
 import { getApiErrorResponse } from '@/shared/utils/api-error.utils';
 
-export const usePopularPostsFeed = () => {
+export const usePrimaryPostsFeed = (kind: PrimaryPostsFeedKind | Ref<PrimaryPostsFeedKind>) => {
     const authStore = useAuthStore();
     const postsStore = usePostsStore();
     const player = usePostPlayer();
@@ -24,19 +25,71 @@ export const usePopularPostsFeed = () => {
     let observer: IntersectionObserver | null = null;
 
     const posts = computed({
-        get: () => postsStore.popularPosts,
+        get: () => {
+            const resolvedKind = unref(kind);
+
+            if (resolvedKind === 'subscriptions') {
+                return postsStore.subscriptionsPosts;
+            }
+
+            if (resolvedKind === 'favorites') {
+                return postsStore.likedPosts;
+            }
+
+            return postsStore.popularPosts;
+        },
         set: (value) => {
+            const resolvedKind = unref(kind);
+
+            if (resolvedKind === 'subscriptions') {
+                postsStore.subscriptionsPosts = value;
+                return;
+            }
+
+            if (resolvedKind === 'favorites') {
+                postsStore.likedPosts = value;
+                return;
+            }
+
             postsStore.popularPosts = value;
         },
     });
-    const canLoadMore = computed(() => postsStore.popularPostsHasMore);
-    const { likePendingPostIds, toggleLike } = usePostsFeedLikes(posts);
+
+    const canLoadMore = computed(() => {
+        const resolvedKind = unref(kind);
+
+        if (resolvedKind === 'subscriptions') {
+            return postsStore.subscriptionsPostsHasMore;
+        }
+
+        if (resolvedKind === 'favorites') {
+            return postsStore.likedPostsHasMore;
+        }
+
+        return postsStore.popularPostsHasMore;
+    });
+
+    const { likePendingPostIds, toggleLike } = usePostsFeedLikes(posts, {
+        removeFromFeedOnUnlike: computed(() => unref(kind) === 'favorites'),
+    });
 
     const resetFeedState = (): void => {
+        const resolvedKind = unref(kind);
+
+        if (resolvedKind === 'subscriptions') {
+            postsStore.clearSubscriptionsPosts();
+            return;
+        }
+
+        if (resolvedKind === 'favorites') {
+            postsStore.clearLikedPosts();
+            return;
+        }
+
         postsStore.clearPopularPostsSnapshot();
     };
 
-    const loadPopularPosts = async (reset = false): Promise<void> => {
+    const loadPosts = async (reset = false): Promise<void> => {
         if (reset) {
             isInitialLoading.value = true;
             errorMessage.value = '';
@@ -50,24 +103,44 @@ export const usePopularPostsFeed = () => {
         }
 
         try {
-            await postsStore.getPopularPosts({
-                limit: POPULAR_POSTS_PAGE_LIMIT,
-                ...(reset ? {} : {
-                    snapshotId: postsStore.popularPostsSnapshotId ?? undefined,
-                    cursor: postsStore.popularPostsNextCursor ?? undefined,
-                }),
-            });
+            const resolvedKind = unref(kind);
 
+            if (resolvedKind === 'subscriptions') {
+                await postsStore.getSubscriptionsPosts({
+                    limit: POPULAR_POSTS_PAGE_LIMIT,
+                    ...(reset ? {} : {
+                        cursor: postsStore.subscriptionsPostsNextCursor ?? undefined,
+                    }),
+                });
+            } else if (resolvedKind === 'favorites') {
+                await postsStore.getLikedPosts({
+                    limit: POPULAR_POSTS_PAGE_LIMIT,
+                    offset: reset ? 0 : postsStore.likedPostsOffset,
+                });
+            } else {
+                await postsStore.getPopularPosts({
+                    limit: POPULAR_POSTS_PAGE_LIMIT,
+                    ...(reset ? {} : {
+                        snapshotId: postsStore.popularPostsSnapshotId ?? undefined,
+                        cursor: postsStore.popularPostsNextCursor ?? undefined,
+                    }),
+                });
+            }
         } catch (error) {
             const apiError = getApiErrorResponse(error);
+            const resolvedKind = unref(kind);
 
-            if (apiError?.errorCode === POPULAR_SNAPSHOT_EXPIRED_ERROR_CODE) {
+            if (resolvedKind === 'popular' && apiError?.errorCode === POPULAR_SNAPSHOT_EXPIRED_ERROR_CODE) {
                 resetFeedState();
-                await loadPopularPosts(true);
+                await loadPosts(true);
                 return;
             }
 
-            errorMessage.value = uk.home.popularFeed.loadFailed;
+            errorMessage.value = resolvedKind === 'subscriptions'
+                ? uk.home.subscriptionsFeed.loadFailed
+                : resolvedKind === 'favorites'
+                    ? uk.home.favoritesFeed.loadFailed
+                    : uk.home.popularFeed.loadFailed;
         } finally {
             isInitialLoading.value = false;
             isLoadingMore.value = false;
@@ -94,10 +167,6 @@ export const usePopularPostsFeed = () => {
         }
     };
 
-    const retry = async (): Promise<void> => {
-        await loadPopularPosts(true);
-    };
-
     const setupObserver = (): void => {
         if (observer) {
             observer.disconnect();
@@ -110,7 +179,7 @@ export const usePopularPostsFeed = () => {
                 return;
             }
 
-            void loadPopularPosts(false);
+            void loadPosts(false);
         }, {
             rootMargin: POPULAR_POSTS_LOAD_MORE_ROOT_MARGIN,
         });
@@ -122,6 +191,11 @@ export const usePopularPostsFeed = () => {
 
     watch(loadMoreTrigger, () => {
         setupObserver();
+    });
+
+    watch(() => unref(kind), () => {
+        errorMessage.value = '';
+        void loadPosts(true);
     });
 
     watch(() => player.countedListenVersion.value, () => {
@@ -143,13 +217,13 @@ export const usePopularPostsFeed = () => {
                 return;
             }
 
-            void loadPopularPosts(true);
+            void loadPosts(true);
         },
     );
 
     onMounted(() => {
         setupObserver();
-        void loadPopularPosts(true);
+        void loadPosts(true);
     });
 
     onBeforeUnmount(() => {
@@ -161,12 +235,11 @@ export const usePopularPostsFeed = () => {
         canLoadMore,
         errorMessage,
         isInitialLoading,
+        isLoadingMore,
         isPlaying: player.isPlaying,
         likePendingPostIds,
-        isLoadingMore,
         loadMoreTrigger,
         posts,
-        retry,
         setActivePost,
         toggleLike,
     };

@@ -22,6 +22,13 @@ export interface PostsState {
     popularPostsSnapshotGeneratedAt: string | null;
     popularPostsNextCursor: string | null;
     popularPostsHasMore: boolean;
+    subscriptionsPosts: Post[];
+    subscriptionsPostsNextCursor: string | null;
+    subscriptionsPostsHasMore: boolean;
+    likedPosts: Post[];
+    likedPostsTotal: number;
+    likedPostsOffset: number;
+    likedPostsHasMore: boolean;
     searchFeedPosts: Post[];
     searchFeedTotal: number;
     searchFeedOffset: number;

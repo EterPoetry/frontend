@@ -47,6 +47,16 @@ const handleNavClick = async (item: AppNavigationItem): Promise<void> => {
         return;
     }
 
+    if (item.key === 'subscriptions') {
+        await router.push({ name: PostRouteNames.SUBSCRIPTIONS });
+        return;
+    }
+
+    if (item.key === 'favorites') {
+        await router.push({ name: PostRouteNames.FAVORITES });
+        return;
+    }
+
     if (item.key === 'create') {
         emit('create');
     }

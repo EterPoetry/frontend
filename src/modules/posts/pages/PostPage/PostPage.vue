@@ -13,6 +13,7 @@ import playsIconUrl from '@/shared/assets/icons/ui/plays.svg';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
 import CreatePostModal from '@/modules/posts/components/CreatePostModal/CreatePostModal.vue';
+import PostCategoryTags from '@/modules/posts/components/PostCategoryTags/PostCategoryTags.vue';
 import { usePostPlayer } from '@/modules/posts/composables/usePostPlayer';
 import { usePostsAppShell } from '@/modules/posts/composables/usePostsAppShell';
 import { CommentSortOrder } from '@/modules/posts/enums/comment-sort-order.enum';
@@ -21,7 +22,7 @@ import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { PostComment } from '@/modules/posts/interfaces/post-comment.interface';
 import { PostTextSynchronizationItem } from '@/modules/posts/interfaces/post.interface';
 import { usePostsStore } from '@/modules/posts/posts.store';
-import { formatPostDuration, formatPostTag } from '@/modules/posts/utils/post-formatting.utils';
+import { formatPostDuration } from '@/modules/posts/utils/post-formatting.utils';
 import { getAuthorInitial } from '@/modules/posts/utils/post-author.utils';
 import AppShell from '@/shared/components/AppShell/AppShell.vue';
 import BaseBottomSheet from '@/shared/components/BaseBottomSheet/BaseBottomSheet.vue';
@@ -953,18 +954,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                   </template>
                 </div>
 
-                <div
-                    class="post-page__tags"
-                    :class="{ 'post-page__tags--empty': !activePost.categories.length }"
-                >
-                  <span
-                      v-for="category in activePost.categories"
-                      :key="category.categoryId"
-                      class="post-page__tag"
-                  >
-                    {{ formatPostTag(category.categoryName) }}
-                  </span>
-                </div>
+                <PostCategoryTags :categories="activePost.categories" class="post-page__tags" />
               </div>
 
               <div class="post-page__summary-side">

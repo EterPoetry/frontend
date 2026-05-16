@@ -11,7 +11,11 @@ import { CreateCommentPayload } from '@/modules/posts/interfaces/create-comment-
 import { DeleteCommentResponse } from '@/modules/posts/interfaces/delete-comment-response.interface';
 import { EndPostListenPayload } from '@/modules/posts/interfaces/end-post-listen-payload.interface';
 import { EndPostListenResponse } from '@/modules/posts/interfaces/end-post-listen-response.interface';
+import { GetFeedPostsQuery } from '@/modules/posts/interfaces/get-feed-posts-query.interface';
+import { GetFeedPostsResponse } from '@/modules/posts/interfaces/get-feed-posts-response.interface';
 import { GetCategoriesQuery } from '@/modules/posts/interfaces/get-categories-query.interface';
+import { GetLikedPostsQuery } from '@/modules/posts/interfaces/get-liked-posts-query.interface';
+import { GetLikedPostsResponse } from '@/modules/posts/interfaces/get-liked-posts-response.interface';
 import { GetPopularPostsQuery } from '@/modules/posts/interfaces/get-popular-posts-query.interface';
 import { GetPopularPostsResponse } from '@/modules/posts/interfaces/get-popular-posts-response.interface';
 import { GetSearchPostsQuery } from '@/modules/posts/interfaces/get-search-posts-query.interface';
@@ -56,6 +60,19 @@ const omitReplyBucket = <T>(collection: Record<number, T>, key: number): Record<
     return nextCollection;
 };
 
+const updatePostLikeInList = (
+    posts: Post[],
+    postId: number,
+    isLiked: boolean,
+    likesCount?: number,
+): Post[] => posts.map((post) => post.postId === postId
+    ? {
+        ...post,
+        isLiked,
+        likesCount: likesCount ?? Math.max(0, post.likesCount + (isLiked ? 1 : -1)),
+    }
+    : post);
+
 export const usePostsStore = defineStore('posts', {
     state: (): PostsState => ({
         config: null,
@@ -75,6 +92,13 @@ export const usePostsStore = defineStore('posts', {
         popularPostsSnapshotGeneratedAt: null,
         popularPostsNextCursor: null,
         popularPostsHasMore: false,
+        subscriptionsPosts: [],
+        subscriptionsPostsNextCursor: null,
+        subscriptionsPostsHasMore: false,
+        likedPosts: [],
+        likedPostsTotal: 0,
+        likedPostsOffset: 0,
+        likedPostsHasMore: false,
         searchFeedPosts: [],
         searchFeedTotal: 0,
         searchFeedOffset: 0,
@@ -187,6 +211,47 @@ export const usePostsStore = defineStore('posts', {
             };
         },
 
+        async getSubscriptionsPosts(query: GetFeedPostsQuery = {}): Promise<GetFeedPostsResponse> {
+            const response = await api.get<GetFeedPostsResponse>('/posts/feed', {
+                params: query,
+            });
+
+            const nextItems = response.data.items.map(applyRememberedPostLikeState);
+
+            this.subscriptionsPosts = query.cursor
+                ? [...this.subscriptionsPosts, ...nextItems]
+                : nextItems;
+            this.subscriptionsPostsNextCursor = response.data.nextCursor;
+            this.subscriptionsPostsHasMore = response.data.hasMore;
+
+            return {
+                ...response.data,
+                items: this.subscriptionsPosts,
+            };
+        },
+
+        async getLikedPosts(query: GetLikedPostsQuery = {}): Promise<GetLikedPostsResponse> {
+            const response = await api.get<GetLikedPostsResponse>('/posts/liked', {
+                params: query,
+            });
+
+            const nextItems = response.data.items.map(applyRememberedPostLikeState);
+            const nextOffset = typeof query.offset === 'number' ? query.offset : 0;
+
+            this.likedPosts = nextOffset > 0
+                ? [...this.likedPosts, ...nextItems]
+                : nextItems;
+            this.likedPostsTotal = response.data.total;
+            this.likedPostsOffset = this.likedPosts.length;
+            this.likedPostsHasMore = this.likedPosts.length < response.data.total;
+
+            return {
+                ...response.data,
+                items: this.likedPosts,
+                offset: this.likedPostsOffset,
+            };
+        },
+
         async searchPosts(query: GetSearchPostsQuery = {}): Promise<GetSearchPostsResponse> {
             const response = await api.get<GetSearchPostsResponse>('/posts/search', {
                 params: query,
@@ -289,6 +354,19 @@ export const usePostsStore = defineStore('posts', {
             this.popularPostsSnapshotGeneratedAt = null;
             this.popularPostsNextCursor = null;
             this.popularPostsHasMore = false;
+        },
+
+        clearSubscriptionsPosts(): void {
+            this.subscriptionsPosts = [];
+            this.subscriptionsPostsNextCursor = null;
+            this.subscriptionsPostsHasMore = false;
+        },
+
+        clearLikedPosts(): void {
+            this.likedPosts = [];
+            this.likedPostsTotal = 0;
+            this.likedPostsOffset = 0;
+            this.likedPostsHasMore = false;
         },
 
         clearSearchPosts(): void {
@@ -464,6 +542,15 @@ export const usePostsStore = defineStore('posts', {
             this.popularPosts = this.popularPosts.map((post) => post.postId === postId
                 ? { ...post, listens: post.listens + 1 }
                 : post);
+            this.subscriptionsPosts = this.subscriptionsPosts.map((post) => post.postId === postId
+                ? { ...post, listens: post.listens + 1 }
+                : post);
+            this.likedPosts = this.likedPosts.map((post) => post.postId === postId
+                ? { ...post, listens: post.listens + 1 }
+                : post);
+            this.searchFeedPosts = this.searchFeedPosts.map((post) => post.postId === postId
+                ? { ...post, listens: post.listens + 1 }
+                : post);
 
             if (this.currentPost?.postId === postId) {
                 this.currentPost = {
@@ -474,13 +561,15 @@ export const usePostsStore = defineStore('posts', {
         },
 
         applyPostLikeState(postId: number, isLiked: boolean, likesCount?: number): void {
-            this.popularPosts = this.popularPosts.map((post) => post.postId === postId
-                ? {
-                    ...post,
-                    isLiked,
-                    likesCount: likesCount ?? Math.max(0, post.likesCount + (isLiked ? 1 : -1)),
-                }
-                : post);
+            this.popularPosts = updatePostLikeInList(this.popularPosts, postId, isLiked, likesCount);
+            this.subscriptionsPosts = updatePostLikeInList(this.subscriptionsPosts, postId, isLiked, likesCount);
+            this.searchFeedPosts = updatePostLikeInList(this.searchFeedPosts, postId, isLiked, likesCount);
+
+            if (isLiked) {
+                this.likedPosts = updatePostLikeInList(this.likedPosts, postId, isLiked, likesCount);
+            } else {
+                this.removePostFromLikedFeed(postId);
+            }
 
             if (this.currentPost?.postId === postId) {
                 this.currentPost = {
@@ -489,6 +578,35 @@ export const usePostsStore = defineStore('posts', {
                     likesCount: likesCount ?? Math.max(0, this.currentPost.likesCount + (isLiked ? 1 : -1)),
                 };
             }
+        },
+
+        removePostFromLikedFeed(postId: number): { post: Post; index: number } | null {
+            const index = this.likedPosts.findIndex((post) => post.postId === postId);
+
+            if (index === -1) {
+                return null;
+            }
+
+            const [post] = this.likedPosts.splice(index, 1);
+
+            this.likedPostsTotal = Math.max(0, this.likedPostsTotal - 1);
+            this.likedPostsOffset = Math.max(0, this.likedPostsOffset - 1);
+            this.likedPostsHasMore = this.likedPosts.length < this.likedPostsTotal;
+
+            return { post, index };
+        },
+
+        restorePostToLikedFeed(post: Post, index: number): void {
+            if (this.likedPosts.some((likedPost) => likedPost.postId === post.postId)) {
+                return;
+            }
+
+            const nextPosts = [...this.likedPosts];
+            nextPosts.splice(index, 0, post);
+            this.likedPosts = nextPosts;
+            this.likedPostsTotal += 1;
+            this.likedPostsOffset += 1;
+            this.likedPostsHasMore = this.likedPosts.length < this.likedPostsTotal;
         },
 
         applyCommentLikeState(commentId: number, isLiked: boolean, likesCount?: number, isLikedByAuthor?: boolean): void {

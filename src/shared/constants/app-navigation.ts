@@ -44,6 +44,14 @@ export const resolveActiveAppNavigationKey = (
         return 'home';
     }
 
+    if (routeName === PostRouteNames.SUBSCRIPTIONS) {
+        return 'subscriptions';
+    }
+
+    if (routeName === PostRouteNames.FAVORITES) {
+        return 'favorites';
+    }
+
     if (routeName === PostRouteNames.EDIT_POST) {
         return 'create';
     }
