@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import sitemap from 'vite-plugin-sitemap'
 import path from 'path'
 
 export default defineConfig(({ mode }) => {
@@ -10,15 +9,9 @@ export default defineConfig(({ mode }) => {
         throw new Error('VITE_API_URL is not defined in the environment variables');
     }
 
-    const hostname = env.VITE_SITE_URL;
-
     return {
         plugins: [
             vue(),
-            sitemap({
-                hostname,
-                dynamicRoutes: ['/', '/home'],
-            }),
         ],
         resolve: {
             alias: {
