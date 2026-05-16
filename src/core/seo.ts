@@ -8,7 +8,13 @@ export interface PostSeoData {
     postId: number;
     title: string | null;
     description: string | null;
+    image?: string | null;
+    url?: string | null;
+    canonical?: string | null;
+    type?: string | null;
     originAuthorName: string | null;
+    authorName?: string | null;
+    textSnippet?: string | null;
     categories: Array<{ categoryName: string }>;
     author: { name: string };
     createdAt: string;
@@ -16,6 +22,7 @@ export interface PostSeoData {
     audioDurationSeconds: number | null;
     audioFileUrl: string | null;
     audioFileName: string | null;
+    audioMimeType?: string | null;
 }
 
 const siteUrl = (import.meta.env.VITE_SITE_URL || SEO_DEFAULTS.siteUrl).replace(/\/$/, '');
@@ -101,6 +108,14 @@ const getAudioMimeType = (audioFileName: string | null, audioFileUrl: string | n
         return 'audio/ogg';
     }
 
+    if (normalizedSource.endsWith('.oga')) {
+        return 'audio/ogg';
+    }
+
+    if (normalizedSource.endsWith('.opus')) {
+        return 'audio/opus';
+    }
+
     if (normalizedSource.endsWith('.m4a')) {
         return 'audio/mp4';
     }
@@ -109,8 +124,18 @@ const getAudioMimeType = (audioFileName: string | null, audioFileUrl: string | n
         return 'audio/aac';
     }
 
+    if (normalizedSource.endsWith('.flac')) {
+        return 'audio/flac';
+    }
+
+    if (normalizedSource.endsWith('.weba') || normalizedSource.endsWith('.webm')) {
+        return 'audio/webm';
+    }
+
     return undefined;
 };
+
+const isHttpsUrl = (value: string | null | undefined): value is string => Boolean(value && value.startsWith('https://'));
 
 const clearPostSeoMeta = (): void => {
     removeTags('meta[property="article:published_time"]');
@@ -121,16 +146,24 @@ const clearPostSeoMeta = (): void => {
     removeTags('meta[property="og:audio"]');
     removeTags('meta[property="og:audio:secure_url"]');
     removeTags('meta[property="og:audio:type"]');
+    removeTags('meta[property="music:duration"]');
     removeTags('meta[property="og:updated_time"]');
+    removeTags('link[rel="alternate"][data-eter-audio]');
     clearJsonLd();
 };
 
-const applySharedSeoMeta = (title: string, description: string, canonicalUrl: string, imageUrl: string): void => {
+const applySharedSeoMeta = (
+    title: string,
+    description: string,
+    pageUrl: string,
+    canonicalUrl: string,
+    imageUrl: string,
+): void => {
     setMetaTag('meta[name="description"]', { name: 'description', content: description });
     setMetaTag('meta[property="og:site_name"]', { property: 'og:site_name', content: SEO_DEFAULTS.siteName });
     setMetaTag('meta[property="og:title"]', { property: 'og:title', content: title });
     setMetaTag('meta[property="og:description"]', { property: 'og:description', content: description });
-    setMetaTag('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
+    setMetaTag('meta[property="og:url"]', { property: 'og:url', content: pageUrl });
     setMetaTag('meta[property="og:image"]', { property: 'og:image', content: imageUrl });
     setMetaTag('meta[property="og:image:secure_url"]', { property: 'og:image:secure_url', content: imageUrl });
     setMetaTag('meta[property="og:image:alt"]', { property: 'og:image:alt', content: SEO_DEFAULTS.imageAlt });
@@ -143,7 +176,7 @@ const applySharedSeoMeta = (title: string, description: string, canonicalUrl: st
     setMetaTag('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
     setMetaTag('meta[name="twitter:image"]', { name: 'twitter:image', content: imageUrl });
     setMetaTag('meta[name="twitter:image:alt"]', { name: 'twitter:image:alt', content: SEO_DEFAULTS.imageAlt });
-    setMetaTag('meta[name="twitter:url"]', { name: 'twitter:url', content: canonicalUrl });
+    setMetaTag('meta[name="twitter:url"]', { name: 'twitter:url', content: pageUrl });
     setMetaTag('meta[name="author"]', { name: 'author', content: SEO_DEFAULTS.siteName });
     setMetaTag('meta[name="application-name"]', { name: 'application-name', content: SEO_DEFAULTS.siteName });
     setMetaTag('meta[name="apple-mobile-web-app-title"]', { name: 'apple-mobile-web-app-title', content: SEO_DEFAULTS.siteName });
@@ -175,7 +208,7 @@ export const updateSeoMeta = (to: RouteLocationNormalizedLoaded): void => {
     setMetaTag('meta[name="keywords"]', { name: 'keywords', content: keywords });
     setMetaTag('meta[name="robots"]', { name: 'robots', content: robots });
     setMetaTag('meta[property="og:type"]', { property: 'og:type', content: 'website' });
-    applySharedSeoMeta(title, description, canonicalUrl, imageUrl);
+    applySharedSeoMeta(title, description, canonicalUrl, canonicalUrl, imageUrl);
 };
 
 export const updatePostSeoMeta = (post: PostSeoData, path: string): void => {
@@ -184,19 +217,21 @@ export const updatePostSeoMeta = (post: PostSeoData, path: string): void => {
     const description = post.description || SEO_DEFAULTS.description;
     const categoryKeywords = post.categories.map((c) => c.categoryName);
     const keywords = [...new Set([...categoryKeywords, ...SEO_DEFAULTS.keywords])].join(', ');
-    const canonicalUrl = buildCanonicalUrl(path);
-    const imageUrl = `${siteUrl}${SEO_DEFAULTS.imagePath}`;
-    const authorName = post.originAuthorName || post.author.name;
+    const canonicalUrl = post.canonical || buildCanonicalUrl(path);
+    const pageUrl = post.url || canonicalUrl;
+    const imageUrl = post.image || `${siteUrl}${SEO_DEFAULTS.imagePath}`;
+    const authorName = post.authorName || post.originAuthorName || post.author.name;
     const articleSection = post.categories[0]?.categoryName;
-    const audioMimeType = getAudioMimeType(post.audioFileName, post.audioFileUrl);
+    const audioMimeType = post.audioMimeType || getAudioMimeType(post.audioFileName, post.audioFileUrl);
+    const ogType = post.type || 'article';
 
     document.title = title;
     clearPostSeoMeta();
 
     setMetaTag('meta[name="keywords"]', { name: 'keywords', content: keywords });
     setMetaTag('meta[name="robots"]', { name: 'robots', content: SEO_ROBOTS.index });
-    setMetaTag('meta[property="og:type"]', { property: 'og:type', content: 'article' });
-    applySharedSeoMeta(title, description, canonicalUrl, imageUrl);
+    setMetaTag('meta[property="og:type"]', { property: 'og:type', content: ogType });
+    applySharedSeoMeta(title, description, pageUrl, canonicalUrl, imageUrl);
     setMetaTag('meta[name="author"]', { name: 'author', content: authorName });
     setMetaTag('meta[property="article:published_time"]', { property: 'article:published_time', content: post.createdAt });
     setMetaTag('meta[property="article:modified_time"]', { property: 'article:modified_time', content: post.updatedAt });
@@ -217,11 +252,33 @@ export const updatePostSeoMeta = (post: PostSeoData, path: string): void => {
 
     if (post.audioFileUrl) {
         setMetaTag('meta[property="og:audio"]', { property: 'og:audio', content: post.audioFileUrl });
-        setMetaTag('meta[property="og:audio:secure_url"]', { property: 'og:audio:secure_url', content: post.audioFileUrl });
+        if (isHttpsUrl(post.audioFileUrl)) {
+            setMetaTag('meta[property="og:audio:secure_url"]', {
+                property: 'og:audio:secure_url',
+                content: post.audioFileUrl,
+            });
+        }
     }
 
     if (audioMimeType) {
         setMetaTag('meta[property="og:audio:type"]', { property: 'og:audio:type', content: audioMimeType });
+    }
+
+    if (post.audioFileUrl && post.audioDurationSeconds && post.audioDurationSeconds > 0) {
+        setMetaTag('meta[property="music:duration"]', {
+            property: 'music:duration',
+            content: String(Math.round(post.audioDurationSeconds)),
+        });
+    }
+
+    if (post.audioFileUrl) {
+        setLinkTag('link[rel="alternate"][data-eter-audio]', {
+            rel: 'alternate',
+            href: post.audioFileUrl,
+            ...(audioMimeType ? { type: audioMimeType } : {}),
+            title: rawTitle || 'Audio version',
+            'data-eter-audio': 'true',
+        });
     }
 
     const jsonLd: Record<string, unknown> = {
@@ -263,6 +320,7 @@ export const updatePostSeoMeta = (post: PostSeoData, path: string): void => {
                 },
                 keywords: [...new Set(categoryKeywords)].join(', '),
                 articleSection,
+                ...(post.textSnippet ? { articleBody: post.textSnippet } : {}),
             },
             {
                 '@type': 'AudioObject',
