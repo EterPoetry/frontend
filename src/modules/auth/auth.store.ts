@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', {
     state: (): AuthState => ({
         token: localStorage.getItem('token'),
         user: null,
+        isInitialized: false,
     }),
 
     getters: {
@@ -88,6 +89,7 @@ export const useAuthStore = defineStore('auth', {
             } finally {
                 this.token = null;
                 this.user = null;
+                this.isInitialized = true;
                 localStorage.removeItem('token');
                 await router.push({ name: AuthRouteNames.LOGIN });
             }

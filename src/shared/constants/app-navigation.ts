@@ -8,6 +8,7 @@ import userIconUrl from '@/shared/assets/icons/ui/user.svg';
 import userActiveIconUrl from '@/shared/assets/icons/ui/user-active.svg';
 import plusIconUrl from '@/shared/assets/icons/ui/plus.svg';
 import plusActiveIconUrl from '@/shared/assets/icons/ui/plus-active.svg';
+import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 
 export interface AppNavigationItem {
     key: 'home' | 'subscriptions' | 'favorites' | 'profile' | 'create';
@@ -30,3 +31,22 @@ export const createAppNavigationItems = (labels: {
     { key: 'profile', label: labels.profile, icon: userIconUrl, activeIcon: userActiveIconUrl, requiresAuth: true },
     { key: 'create', label: labels.create, icon: plusIconUrl, activeIcon: plusActiveIconUrl, requiresAuth: true },
 ]);
+
+export const resolveActiveAppNavigationKey = (
+    routeName: unknown,
+    explicitKey?: AppNavigationItem['key'],
+): AppNavigationItem['key'] | undefined => {
+    if (explicitKey !== undefined) {
+        return explicitKey;
+    }
+
+    if (routeName === PostRouteNames.HOME) {
+        return 'home';
+    }
+
+    if (routeName === PostRouteNames.EDIT_POST) {
+        return 'create';
+    }
+
+    return undefined;
+};

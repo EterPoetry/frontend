@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useNavigateToPostComments } from '@/modules/posts/composables/useNavigateToPostComments';
 import closeIconUrl from '@/shared/assets/icons/ui/close.svg';
 import commentIconUrl from '@/shared/assets/icons/ui/comment.svg';
 import heartIconUrl from '@/shared/assets/icons/ui/heart.svg';
 import heartActiveIconUrl from '@/shared/assets/icons/ui/heart-active.svg';
+import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
 import volumeIconUrl from '@/shared/assets/icons/ui/volume.svg';
@@ -20,6 +22,7 @@ import { formatSecondsToClock } from '@/shared/utils/time.utils';
 import './StickyPostPlayer.css';
 
 const props = defineProps<StickyPostPlayerProps>();
+const { navigateToPostComments } = useNavigateToPostComments();
 
 const emit = defineEmits<{
     (e: PostsEvents.LIKE_TOGGLE, postId: number): void;
@@ -72,6 +75,16 @@ const handleLikeClick = (): void => {
 
     emit(PostsEvents.LIKE_TOGGLE, postId);
 };
+
+const handleCommentClick = (): void => {
+    const postId = player.activePost.value?.postId;
+
+    if (!postId) {
+        return;
+    }
+
+    navigateToPostComments(postId);
+};
 </script>
 
 <template>
@@ -90,7 +103,12 @@ const handleLikeClick = (): void => {
         <div class="sticky-post-player__meta">
           <h3 class="sticky-post-player__title">
             <span v-if="player.isPlaying.value" class="sticky-post-player__playing-dot" aria-hidden="true" />
-            {{ player.activePost.value.title || uk.posts.player.untitled }}
+            <RouterLink
+                :to="{ name: PostRouteNames.POST, params: { postId: player.activePost.value.postId } }"
+                class="sticky-post-player__title-link"
+            >
+              {{ player.activePost.value.title || uk.posts.player.untitled }}
+            </RouterLink>
           </h3>
 
           <div class="sticky-post-player__author-row">
@@ -154,14 +172,19 @@ const handleLikeClick = (): void => {
               <span class="sticky-post-player__stat-value">{{ formatCompactNumber(player.activePost.value.likesCount) }}</span>
             </button>
 
-            <div class="sticky-post-player__stat">
+            <button
+                type="button"
+                class="sticky-post-player__stat sticky-post-player__stat-link stat-button"
+                :aria-label="uk.home.popularFeed.comments"
+                @click="handleCommentClick"
+            >
               <img
                   :src="commentIconUrl"
                   :alt="uk.home.popularFeed.comments"
                   class="sticky-post-player__stat-icon sticky-post-player__stat-icon--comment"
               />
               <span class="sticky-post-player__stat-value">{{ formatCompactNumber(player.activePost.value.commentsCount) }}</span>
-            </div>
+            </button>
           </div>
 
           <div class="sticky-post-player__volume-group">

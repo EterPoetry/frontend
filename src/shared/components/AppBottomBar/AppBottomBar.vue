@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
-import { createAppNavigationItems, type AppNavigationItem } from '@/shared/constants/app-navigation';
+import { createAppNavigationItems, resolveActiveAppNavigationKey, type AppNavigationItem } from '@/shared/constants/app-navigation';
 import { uk } from '@/shared/locales/uk';
 import './AppBottomBar.css';
 
@@ -21,13 +21,9 @@ const router = useRouter();
 
 const navItems = computed(() => createAppNavigationItems(uk.home.nav));
 
-const activeNavKey = computed<AppNavigationItem['key']>(() => {
-    if (props.activeNavKey) {
-        return props.activeNavKey;
-    }
-
-    return route.name === PostRouteNames.HOME ? 'home' : 'create';
-});
+const activeNavKey = computed<AppNavigationItem['key'] | undefined>(
+    () => resolveActiveAppNavigationKey(route.name, props.activeNavKey),
+);
 
 const isItemActive = (item: AppNavigationItem): boolean => item.key === activeNavKey.value;
 

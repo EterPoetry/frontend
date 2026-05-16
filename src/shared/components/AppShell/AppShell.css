@@ -48,7 +48,7 @@
 
 @media (max-width: 720px) {
     .app-shell__content {
-        padding-top: 156px;
+        padding-top: 124px;
     }
 
     .app-shell--with-player .app-shell__content {
@@ -58,7 +58,7 @@
 
 @media (max-width: 560px) {
     .app-shell__content {
-        padding-top: 148px;
+        padding-top: 118px;
     }
 
     .app-shell--with-player .app-shell__content {

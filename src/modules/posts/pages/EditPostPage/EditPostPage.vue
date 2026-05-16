@@ -83,12 +83,8 @@ const loadPost = async (postId: number): Promise<void> => {
 };
 
 const handlePostUpdated = (post: Post): void => {
-    if (routePostId.value === post.postId) {
-        return;
-    }
-
     void router.replace({
-        name: PostRouteNames.EDIT_POST,
+        name: PostRouteNames.POST,
         params: { postId: post.postId },
     });
 };

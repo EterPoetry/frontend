@@ -34,6 +34,13 @@ export const SEO_ROUTES = {
         robots: SEO_ROBOTS.index,
         keywords: SEO_DEFAULTS.keywords,
     },
+    notFound: {
+        title: 'Сторінку не знайдено',
+        description: 'Сторінку Eter не знайдено.',
+        canonicalPath: '/404',
+        robots: SEO_ROBOTS.noIndex,
+        keywords: SEO_DEFAULTS.keywords,
+    },
     noIndex: {
         robots: SEO_ROBOTS.noIndex,
     },

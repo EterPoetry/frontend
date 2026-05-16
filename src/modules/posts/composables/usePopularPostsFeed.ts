@@ -116,6 +116,12 @@ export const usePopularPostsFeed = () => {
 
         if (updatedPost) {
             player.syncActivePost(updatedPost);
+        } else if (player.activePost.value?.postId === postId) {
+            player.syncActivePost({
+                ...player.activePost.value,
+                isLiked,
+                likesCount: likesCount ?? Math.max(0, player.activePost.value.likesCount + (isLiked ? 1 : -1)),
+            });
         }
     };
 
@@ -132,10 +138,12 @@ export const usePopularPostsFeed = () => {
         }
 
         const nextIsLiked = !targetPost.isLiked;
+        const previousIsLiked = targetPost.isLiked;
+        const previousLikesCount = targetPost.likesCount;
 
         likePendingPostIds.value = [...likePendingPostIds.value, postId];
-        applyLocalLikeState(postId, nextIsLiked);
-        postsStore.applyPostLikeState(postId, nextIsLiked);
+        applyLocalLikeState(postId, nextIsLiked, previousLikesCount);
+        postsStore.applyPostLikeState(postId, nextIsLiked, previousLikesCount);
 
         try {
             const result = nextIsLiked
@@ -145,8 +153,8 @@ export const usePopularPostsFeed = () => {
             applyLocalLikeState(postId, nextIsLiked, result.likesCount);
             postsStore.applyPostLikeState(postId, nextIsLiked, result.likesCount);
         } catch (_error) {
-            applyLocalLikeState(postId, !nextIsLiked);
-            postsStore.applyPostLikeState(postId, !nextIsLiked);
+            applyLocalLikeState(postId, previousIsLiked, previousLikesCount);
+            postsStore.applyPostLikeState(postId, previousIsLiked, previousLikesCount);
         } finally {
             likePendingPostIds.value = likePendingPostIds.value.filter((pendingPostId) => pendingPostId !== postId);
         }
@@ -189,6 +197,17 @@ export const usePopularPostsFeed = () => {
             ? { ...post, listens: post.listens + 1 }
             : post);
     });
+
+    watch(
+        [() => authStore.isInitialized, () => authStore.token],
+        ([isInitialized, token], [prevIsInitialized, prevToken]) => {
+            if (!isInitialized || !token || (prevIsInitialized === isInitialized && prevToken === token)) {
+                return;
+            }
+
+            void loadPopularPosts(true);
+        },
+    );
 
     onMounted(() => {
         setupObserver();

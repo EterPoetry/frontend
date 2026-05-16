@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { useNavigateToPostComments } from '@/modules/posts/composables/useNavigateToPostComments';
 import heartIconUrl from '@/shared/assets/icons/ui/heart.svg';
 import heartActiveIconUrl from '@/shared/assets/icons/ui/heart-active.svg';
-import eyeIconUrl from '@/shared/assets/icons/ui/eye.svg';
+import playsIconUrl from '@/shared/assets/icons/ui/plays.svg';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
 import commentIconUrl from '@/shared/assets/icons/ui/comment.svg';
 import { PostCardProps } from '@/modules/posts/interfaces/post-card-props.interface';
 import { PostsEvents } from '@/modules/posts/enums/posts-events.enum';
+import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { uk } from '@/shared/locales/uk';
 import {
     formatPostDuration,
@@ -20,6 +22,7 @@ const props = withDefaults(defineProps<PostCardProps>(), {
     isActive: false,
     isPlaying: false,
 });
+const { navigateToPostComments } = useNavigateToPostComments();
 
 const emit = defineEmits<{
     (e: PostsEvents.ACTIVATE, postId: number): void;
@@ -33,53 +36,64 @@ const handleLikeClick = (): void => {
 
     emit(PostsEvents.LIKE_TOGGLE, props.post.postId);
 };
+
+const handleCommentClick = (): void => {
+    navigateToPostComments(props.post.postId);
+};
 </script>
 
 <template>
   <article class="post-card" :class="{ 'post-card--active': isActive }">
     <div class="post-card__main">
-      <div class="post-card__meta-block">
-        <h3 class="post-card__title">
-          {{ post.title || 'Без назви' }}
-        </h3>
-
-        <div class="post-card__meta-row">
-          <span v-if="post.originAuthorName" class="post-card__origin-author">
-            {{ post.originAuthorName }}
-          </span>
-          <span v-if="post.originAuthorName" class="post-card__dot" aria-hidden="true" />
-
-          <span class="post-card__author">
-            <img
-                v-if="post.author.photo"
-                :src="post.author.photo"
-                :alt="post.author.name"
-                class="post-card__author-photo"
-            />
-            <span v-else class="post-card__author-fallback">
-              {{ getAuthorInitial(post.author.name) }}
+      <RouterLink
+          :to="{ name: PostRouteNames.POST, params: { postId: post.postId } }"
+          class="post-card__meta-link"
+      >
+        <div class="post-card__meta-block">
+          <h3 class="post-card__title">
+            <span class="post-card__title-link">
+              {{ post.title || 'Без назви' }}
             </span>
+          </h3>
 
-            <span class="post-card__author-name">
-              {{ post.author.name }}
+          <div class="post-card__meta-row">
+            <span v-if="post.originAuthorName" class="post-card__origin-author">
+              {{ post.originAuthorName }}
             </span>
-          </span>
-        </div>
+            <span v-if="post.originAuthorName" class="post-card__dot" aria-hidden="true" />
 
-        <div
-            class="post-card__tags"
-            :class="{ 'post-card__tags--empty': !post.categories.length }"
-            :aria-hidden="!post.categories.length"
-        >
-          <span
-              v-for="category in post.categories"
-              :key="category.categoryId"
-              class="post-card__tag"
+            <span class="post-card__author">
+              <img
+                  v-if="post.author.photo"
+                  :src="post.author.photo"
+                  :alt="post.author.name"
+                  class="post-card__author-photo"
+              />
+              <span v-else class="post-card__author-fallback">
+                {{ getAuthorInitial(post.author.name) }}
+              </span>
+
+              <span class="post-card__author-name">
+                {{ post.author.name }}
+              </span>
+            </span>
+          </div>
+
+          <div
+              class="post-card__tags"
+              :class="{ 'post-card__tags--empty': !post.categories.length }"
+              :aria-hidden="!post.categories.length"
           >
-            {{ formatPostTag(category.categoryName) }}
-          </span>
+            <span
+                v-for="category in post.categories"
+                :key="category.categoryId"
+                class="post-card__tag"
+            >
+              {{ formatPostTag(category.categoryName) }}
+            </span>
+          </div>
         </div>
-      </div>
+      </RouterLink>
 
       <div class="post-card__side">
         <div class="post-card__stats">
@@ -100,18 +114,23 @@ const handleLikeClick = (): void => {
             <span>{{ formatCompactNumber(post.likesCount) }}</span>
           </button>
 
-          <div class="post-card__stat">
+          <button
+              type="button"
+              class="post-card__stat post-card__stat-link stat-button"
+              :aria-label="uk.home.popularFeed.comments"
+              @click="handleCommentClick"
+          >
             <img
                 :src="commentIconUrl"
                 :alt="uk.home.popularFeed.comments"
                 class="post-card__stat-icon post-card__stat-icon--comment"
             />
             <span>{{ formatCompactNumber(post.commentsCount) }}</span>
-          </div>
+          </button>
 
           <div class="post-card__stat">
             <img
-                :src="eyeIconUrl"
+                :src="playsIconUrl"
                 :alt="uk.home.popularFeed.listens"
                 class="post-card__stat-icon post-card__stat-icon--eye"
             />

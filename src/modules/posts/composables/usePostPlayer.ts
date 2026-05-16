@@ -1,7 +1,9 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useAuthStore } from '@/modules/auth/auth.store';
 import { usePostsStore } from '@/modules/posts/posts.store';
 import { Post } from '@/modules/posts/interfaces/post.interface';
 import { StoredPostPlayerState } from '@/modules/posts/interfaces/stored-post-player-state.interface';
+import { applyRememberedPostLikeState } from '@/modules/posts/utils/post-like-state.utils';
 import {
     LISTEN_PROGRESS_INTERVAL_MS,
     MIN_PROGRESS_STEP_MS,
@@ -29,6 +31,7 @@ let isFinalizingListen = false;
 let hasAttemptedRestore = false;
 let pendingRestoreTimeSeconds: number | null = null;
 let lastPersistedAt = 0;
+let activePostSyncRequestId = 0;
 
 const createListenSessionId = (): string => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -103,6 +106,16 @@ const getCurrentPositionMs = (): number => Math.max(0, Math.floor(audioElement.c
 const resetProgressState = (): void => {
     currentSessionId = null;
     lastReportedPositionMs = 0;
+};
+
+const clearActivePostState = (): void => {
+    audioElement.removeAttribute('src');
+    audioElement.load();
+    activePost.value = null;
+    durationSeconds.value = 0;
+    currentTimeSeconds.value = 0;
+    clearStoredPlayerState();
+    pendingRestoreTimeSeconds = null;
 };
 
 const notifyCountedListen = (postId: number): void => {
@@ -271,13 +284,7 @@ const teardownCurrentPost = async (
     }
 
     if (clearPost) {
-        audioElement.removeAttribute('src');
-        audioElement.load();
-        activePost.value = null;
-        durationSeconds.value = 0;
-        currentTimeSeconds.value = 0;
-        clearStoredPlayerState();
-        pendingRestoreTimeSeconds = null;
+        clearActivePostState();
     }
 };
 
@@ -317,6 +324,7 @@ const ensureInitialized = (): void => {
 };
 
 export const usePostPlayer = () => {
+    const authStore = useAuthStore();
     const postsStore = usePostsStore();
 
     ensureInitialized();
@@ -351,14 +359,14 @@ export const usePostPlayer = () => {
                 audioElement.src = post.audioFileUrl;
                 audioElement.load();
                 audioElement.currentTime = 0;
-                activePost.value = post;
+                activePost.value = applyRememberedPostLikeState(post);
                 currentTimeSeconds.value = 0;
                 durationSeconds.value = post.audioDurationSeconds ?? 0;
                 resetProgressState();
                 pendingRestoreTimeSeconds = null;
                 persistPlayerState(true);
             } else {
-                activePost.value = post;
+                activePost.value = applyRememberedPostLikeState(post);
             }
 
             await ensureListenSession(postsStore, post);
@@ -396,6 +404,8 @@ export const usePostPlayer = () => {
 
     const togglePostPlayback = async (post: Post): Promise<void> => {
         if (activePost.value?.postId === post.postId) {
+            syncActivePost(post);
+
             if (isPlaying.value) {
                 await pausePlayback();
                 return;
@@ -409,10 +419,36 @@ export const usePostPlayer = () => {
     };
 
     const closePlayer = async (): Promise<void> => {
-        await teardownCurrentPost(postsStore, {
-            clearPost: true,
-            resetTime: true,
-        });
+        const postId = activePost.value?.postId;
+        const positionMs = getCurrentPositionMs();
+        const session = postId !== undefined && postsStore.currentListenSession?.postId === postId
+            ? postsStore.currentListenSession
+            : null;
+
+        clearListenProgressTimer();
+
+        if (!audioElement.paused) {
+            audioElement.pause();
+        }
+
+        clearActivePostState();
+        resetProgressState();
+
+        if (!session || postId === undefined) {
+            postsStore.clearCurrentListenSession();
+            return;
+        }
+
+        try {
+            await postsStore.updateListenProgress(postId, {
+                token: session.token,
+                positionMs,
+            });
+        } catch (error) {
+            console.error('Failed to sync listen progress before closing player.', error);
+        }
+
+        await finalizeCurrentListen(postsStore, postId, positionMs);
     };
 
     const seekToPercent = async (nextPercent: number): Promise<void> => {
@@ -446,9 +482,43 @@ export const usePostPlayer = () => {
 
         activePost.value = {
             ...activePost.value,
-            ...nextPost,
+            ...applyRememberedPostLikeState(nextPost),
         };
         persistPlayerState(true);
+    };
+
+    const refreshActivePostState = async (): Promise<void> => {
+        const postId = activePost.value?.postId;
+
+        if (!postId || !authStore.isInitialized || !authStore.isAuthenticated) {
+            return;
+        }
+
+        const requestId = ++activePostSyncRequestId;
+
+        try {
+            const latestPost = await postsStore.fetchPost(postId);
+
+            if (requestId !== activePostSyncRequestId || activePost.value?.postId !== postId) {
+                return;
+            }
+
+            syncActivePost(latestPost);
+
+            const likeState = await postsStore.fetchPostLikeState(postId);
+
+            if (!likeState || requestId !== activePostSyncRequestId || activePost.value?.postId !== postId) {
+                return;
+            }
+
+            syncActivePost({
+                ...latestPost,
+                isLiked: likeState.isLiked,
+                likesCount: likeState.likesCount ?? latestPost.likesCount,
+            });
+        } catch (_error) {
+            return;
+        }
     };
 
     const setVolume = (nextVolume: number): void => {
@@ -479,7 +549,7 @@ export const usePostPlayer = () => {
             return;
         }
 
-        activePost.value = storedState.post;
+        activePost.value = applyRememberedPostLikeState(storedState.post);
         currentTimeSeconds.value = Math.max(0, storedState.currentTimeSeconds);
         durationSeconds.value = storedState.post.audioDurationSeconds ?? 0;
         volume.value = Math.min(1, Math.max(0, storedState.volume));
@@ -491,8 +561,18 @@ export const usePostPlayer = () => {
         pendingRestoreTimeSeconds = currentTimeSeconds.value;
         persistPlayerState(true);
 
+        if (!authStore.isInitialized && authStore.token) {
+            return;
+        }
+
+        const requestId = ++activePostSyncRequestId;
+
         try {
-            const latestPost = await postsStore.getPost(storedState.post.postId);
+            const latestPost = await postsStore.fetchPost(storedState.post.postId);
+
+            if (requestId !== activePostSyncRequestId || activePost.value?.postId !== storedState.post.postId) {
+                return;
+            }
 
             if (!latestPost.audioFileUrl) {
                 await closePlayer();
@@ -501,6 +581,16 @@ export const usePostPlayer = () => {
 
             activePost.value = latestPost;
             durationSeconds.value = latestPost.audioDurationSeconds ?? durationSeconds.value;
+
+            const likeState = await postsStore.fetchPostLikeState(storedState.post.postId);
+
+            if (likeState && requestId === activePostSyncRequestId && activePost.value?.postId === storedState.post.postId) {
+                activePost.value = {
+                    ...activePost.value,
+                    isLiked: likeState.isLiked,
+                    likesCount: likeState.likesCount ?? activePost.value.likesCount,
+                };
+            }
 
             if (audioElement.src !== latestPost.audioFileUrl) {
                 audioElement.src = latestPost.audioFileUrl;
@@ -515,6 +605,23 @@ export const usePostPlayer = () => {
     };
 
     void restorePlayerState();
+
+    watch(
+        [() => authStore.isInitialized, () => authStore.token, activePostId],
+        ([isInitialized, token, postId], [prevIsInitialized, prevToken, prevPostId]) => {
+            if (
+                !isInitialized
+                || !token
+                || !postId
+                || (prevIsInitialized === isInitialized && prevToken === token && prevPostId === postId)
+            ) {
+                return;
+            }
+
+            void refreshActivePostState();
+        },
+        { immediate: true },
+    );
 
     return {
         activePost,

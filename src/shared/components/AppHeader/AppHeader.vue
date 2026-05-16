@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
+import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import searchIconUrl from '@/shared/assets/icons/ui/search.svg';
 import gridIconUrl from '@/shared/assets/icons/ui/grid.svg';
 import sortIconUrl from '@/shared/assets/icons/ui/sort.svg';
@@ -17,7 +18,7 @@ const { theme, toggleTheme } = useTheme();
 const route = useRoute();
 
 const sortMenuOpen = ref(false);
-const isSearchEnabled = computed(() => route.path === '/app');
+const isSearchEnabled = computed(() => route.name === PostRouteNames.HOME || route.name === PostRouteNames.POST);
 const sortOptions = [
     uk.home.sort.latest,
     uk.home.sort.popular,

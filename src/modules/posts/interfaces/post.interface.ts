@@ -28,7 +28,7 @@ export interface Post {
     isLiked: boolean;
     commentsCount: number;
     originAuthorName: string | null;
-    textSynchronization?: PostTextSynchronizationItem[];
+    textSynchronization: PostTextSynchronizationItem[];
     categories: PostCategory[];
     authorId: number;
     author: PostAuthor;

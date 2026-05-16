@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import { uk } from "@/shared/locales/uk";
 import { updateSeoMeta } from '@/core/seo';
 import { SEO_ROUTES } from '@/shared/constants/seo.constants';
@@ -12,7 +13,7 @@ const noIndexMeta = SEO_ROUTES.noIndex;
 const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
-        name: 'landing',
+        name: SharedRouteNames.LANDING,
         component: () => import('@/modules/auth/pages/LandingPage/LandingPage.vue'),
         meta: {
             isPublic: true,
@@ -45,6 +46,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { isPublic: true, title: uk.home.title, ...noIndexMeta }
     },
     {
+        path: '/app/posts/:postId(\\d+)',
+        name: PostRouteNames.POST,
+        component: () => import('@/modules/posts/pages/PostPage/PostPage.vue'),
+        meta: { isPublic: true, title: uk.posts.details.title, ...noIndexMeta }
+    },
+    {
         path: '/edit/:postId(\\d+)',
         name: PostRouteNames.EDIT_POST,
         component: () => import('@/modules/posts/pages/EditPostPage/EditPostPage.vue'),
@@ -61,7 +68,17 @@ const routes: Array<RouteRecordRaw> = [
         name: AuthRouteNames.RESET_PASSWORD,
         component: () => import('@/modules/auth/pages/ResetPasswordPage/ResetPasswordPage.vue'),
         meta: { isPublic: true, guestOnly: true, skipAuthRefresh: true, title: uk.auth.resetPassword.title, ...noIndexMeta }
-    }
+    },
+    {
+        path: '/404',
+        name: SharedRouteNames.NOT_FOUND,
+        component: () => import('@/shared/pages/NotFoundPage/NotFoundPage.vue'),
+        meta: { isPublic: true, ...SEO_ROUTES.notFound }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: { name: SharedRouteNames.NOT_FOUND },
+    },
 ];
 
 const router = createRouter({
@@ -91,12 +108,14 @@ router.beforeEach(async (to, _from, next) => {
         isInitialAuthenticationChecked = true;
         try {
             const user = await authStore.getProfile();
+            authStore.isInitialized = true;
             if (user?.isEmailVerified) {
                 return next({ name: PostRouteNames.HOME });
             } else {
                 return next({ name: AuthRouteNames.VERIFICATION });
             }
         } catch (error) {
+            authStore.isInitialized = true;
             return next({ name: AuthRouteNames.LOGIN, replace: true });
         }
     }
@@ -117,15 +136,18 @@ router.beforeEach(async (to, _from, next) => {
             try {
                 await authStore.getProfile();
             } catch (error) {
+                authStore.isInitialized = true;
                 return next();
             }
         }
+
+        authStore.isInitialized = true;
     }
 
     const isAuthenticated = !!authStore.token;
     const isVerified = authStore.isVerified;
 
-    if (to.name === 'landing' && isAuthenticated) {
+    if (to.name === SharedRouteNames.LANDING && isAuthenticated) {
         return next({ name: PostRouteNames.HOME });
     }
 
