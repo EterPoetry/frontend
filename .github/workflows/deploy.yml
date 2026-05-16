@@ -23,6 +23,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate build secrets
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
+        run: |
+          test -n "$VITE_API_URL" || (echo "VITE_API_URL secret is required" && exit 1)
+          test -n "$VITE_SITE_URL" || (echo "VITE_SITE_URL secret is required" && exit 1)
+
       - name: Convert repository name to lowercase
         id: lowercase
         run: |
@@ -52,6 +60,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_SITE_URL=${{ secrets.VITE_SITE_URL }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -102,6 +111,14 @@ jobs:
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
             export APP_IMAGE="$APP_IMAGE"
+            test -f .env || (echo ".env file is required in ${{ secrets.DEPLOY_PATH }}" && exit 1)
+            grep -q '^PORT=' .env || (echo ".env must contain PORT" && exit 1)
+            grep -q '^SITE_URL=' .env || (echo ".env must contain SITE_URL" && exit 1)
+            grep -q '^META_API_BASE_URL=' .env || (echo ".env must contain META_API_BASE_URL" && exit 1)
+            grep -q '^META_POST_PATH=' .env || (echo ".env must contain META_POST_PATH" && exit 1)
+            grep -q '^META_PROFILE_PATH=' .env || (echo ".env must contain META_PROFILE_PATH" && exit 1)
+            grep -q '^META_CACHE_TTL_MS=' .env || (echo ".env must contain META_CACHE_TTL_MS" && exit 1)
+            grep -q '^META_API_TIMEOUT_MS=' .env || (echo ".env must contain META_API_TIMEOUT_MS" && exit 1)
             if [ -n "$GHCR_USERNAME" ] && [ -n "$GHCR_TOKEN" ]; then
               echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
             else

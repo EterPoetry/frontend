@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:prod": "vite --mode production",
     "build": "vue-tsc -b && vite build",
+    "start": "node server/index.js",
     "preview": "vite preview"
   },
   "dependencies": {

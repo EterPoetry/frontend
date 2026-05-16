@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
         throw new Error('VITE_API_URL is not defined in the environment variables');
     }
 
-    const hostname = env.VITE_SITE_URL || 'https://eter.pp.ua';
+    const hostname = env.VITE_SITE_URL;
 
     return {
         plugins: [

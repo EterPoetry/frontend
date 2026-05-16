@@ -1,6 +1,11 @@
 export const SEO_DEFAULTS = {
     siteUrl: 'https://eter.pp.ua',
     imagePath: '/og-image.svg',
+    imageAlt: 'Eter — українська платформа аудіопоезії',
+    imageWidth: '1200',
+    imageHeight: '630',
+    imageType: 'image/svg+xml',
+    siteName: 'Eter',
     title: 'Eter — аудіопоезія українською',
     titleTemplate: (title: string): string => `${title} | Eter`,
     description: 'Eter — українська платформа аудіопоезії для публікації та прослуховування віршів голосом разом із текстом.',
@@ -19,6 +24,8 @@ export const SEO_DEFAULTS = {
     ],
     locale: 'uk_UA',
     twitterCard: 'summary_large_image',
+    themeColorLight: '#f7f3ec',
+    themeColorDark: '#1f1815',
 };
 
 export const SEO_ROBOTS = {
