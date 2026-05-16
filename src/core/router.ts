@@ -40,16 +40,16 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, requiresVerification: false, title: uk.auth.verification.title, ...noIndexMeta }
     },
     {
-        path: '/app',
+        path: '/home',
         name: PostRouteNames.HOME,
         component: () => import('@/modules/posts/pages/HomePage/HomePage.vue'),
-        meta: { isPublic: true, title: uk.home.title, ...noIndexMeta }
+        meta: { isPublic: true, ...SEO_ROUTES.home }
     },
     {
-        path: '/app/posts/:postId(\\d+)',
+        path: '/posts/:postId(\\d+)',
         name: PostRouteNames.POST,
         component: () => import('@/modules/posts/pages/PostPage/PostPage.vue'),
-        meta: { isPublic: true, title: uk.posts.details.title, ...noIndexMeta }
+        meta: { isPublic: true, ...SEO_ROUTES.post }
     },
     {
         path: '/edit/:postId(\\d+)',

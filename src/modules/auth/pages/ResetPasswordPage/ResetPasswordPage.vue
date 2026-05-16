@@ -23,7 +23,7 @@ const handleLoginNavigate = (): void => {
 <template>
   <div class="reset-password-page">
     <div class="reset-password-card">
-      <RouterLink class="reset-password-logo-section" to="/app">
+      <RouterLink class="reset-password-logo-section" to="/home">
         <img :src="logoUrl" :alt="uk.common.appName" class="reset-password-logo" />
         <div class="reset-password-divider-line"></div>
       </RouterLink>

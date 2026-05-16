@@ -34,6 +34,18 @@ export const SEO_ROUTES = {
         robots: SEO_ROBOTS.index,
         keywords: SEO_DEFAULTS.keywords,
     },
+    home: {
+        title: 'Популярні вірші',
+        description: 'Слухайте найпопулярніші вірші на Eter — українській платформі аудіопоезії. Голоси авторів, тексти та живе читання поезії українською.',
+        canonicalPath: '/home',
+        robots: SEO_ROBOTS.index,
+        keywords: SEO_DEFAULTS.keywords,
+    },
+    post: {
+        description: SEO_DEFAULTS.description,
+        robots: SEO_ROBOTS.index,
+        keywords: SEO_DEFAULTS.keywords,
+    },
     notFound: {
         title: 'Сторінку не знайдено',
         description: 'Сторінку Eter не знайдено.',

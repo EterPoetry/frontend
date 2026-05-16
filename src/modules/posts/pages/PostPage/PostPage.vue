@@ -35,6 +35,7 @@ import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import { BaseFieldHandle } from '@/shared/interfaces/base-field-handle.interface';
 import { MOBILE_BREAKPOINT_PX } from '@/shared/constants/breakpoints.constants';
 import { COMMENTS_PAGE_LIMIT, REPLIES_PAGE_LIMIT, COMMENTS_FOCUS_EVENT, COMMENTS_FOCUS_QUERY_TARGET } from '@/modules/posts/constants/post-comments.constants';
+import { updatePostSeoMeta, clearJsonLd } from '@/core/seo';
 import './PostPage.css';
 
 const postsStore = usePostsStore();
@@ -414,6 +415,7 @@ const loadPost = async (postId: number): Promise<void> => {
         }
 
         postsStore.currentPost = post;
+        updatePostSeoMeta(post, route.path);
         syncPlayerPostState();
         await loadAuthorProfile(post.author.userId);
         await loadComments(true);
@@ -847,6 +849,7 @@ onBeforeUnmount(() => {
     window.removeEventListener('resize', syncMobileViewport);
     window.removeEventListener(COMMENTS_FOCUS_EVENT, handleCommentsFocusEvent as EventListener);
     document.body.style.overflow = '';
+    clearJsonLd();
 });
 
 watch(isMobileViewport, (isMobile) => {

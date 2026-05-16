@@ -16,7 +16,7 @@ const handleVerifySuccess = async (): Promise<void> => {
 <template>
   <div class="verification-page">
     <div class="verification-card">
-      <RouterLink class="verification-logo-section" to="/app">
+      <RouterLink class="verification-logo-section" to="/home">
         <img :src="logoUrl" :alt="uk.common.appName" class="verification-logo" />
         <div class="verification-divider-line"></div>
       </RouterLink>
