@@ -18,6 +18,10 @@
     padding-top: 118px;
 }
 
+.app-shell--compact-header .app-shell__content {
+    padding-top: 84px;
+}
+
 .app-shell--with-player .app-shell__content {
     padding-bottom: 164px;
 }
@@ -33,6 +37,10 @@
 
     .app-shell__content {
         padding-top: 96px;
+    }
+
+    .app-shell--compact-header .app-shell__content {
+        padding-top: 78px;
     }
 }
 
@@ -51,6 +59,10 @@
         padding-top: 124px;
     }
 
+    .app-shell--compact-header .app-shell__content {
+        padding-top: 124px;
+    }
+
     .app-shell--with-player .app-shell__content {
         padding-bottom: 372px;
     }
@@ -58,6 +70,10 @@
 
 @media (max-width: 560px) {
     .app-shell__content {
+        padding-top: 118px;
+    }
+
+    .app-shell--compact-header .app-shell__content {
         padding-top: 118px;
     }
 

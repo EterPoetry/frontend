@@ -214,7 +214,18 @@ export const uk = {
         sort: {
             ariaLabel: 'Сортування',
             latest: 'Найновіші',
+            oldest: 'Найстаріші',
             popular: 'Популярні',
+        },
+        categories: {
+            filterLabel: 'Фільтр за категорією',
+            searchPlaceholder: 'Пошук',
+            noResults: 'Нічого не знайдено',
+        },
+        searchFeed: {
+            title: 'Результати пошуку',
+            empty: 'Нічого не знайдено.',
+            loadFailed: 'Не вдалося завантажити результати. Спробуйте ще раз.',
         },
         popularFeed: {
             title: 'Популярні',

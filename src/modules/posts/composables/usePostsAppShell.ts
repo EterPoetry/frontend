@@ -1,5 +1,5 @@
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 import { DEFAULT_FREE_DURATION_LIMIT_MINUTES } from '@/modules/posts/constants/post-limits.constants';
@@ -7,12 +7,35 @@ import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { Post } from '@/modules/posts/interfaces/post.interface';
 import { usePostsStore } from '@/modules/posts/posts.store';
 
+const DEFAULT_SORT_BY = 'newest';
+
+const normalizeSortBy = (value: unknown): string => {
+    if (value === 'oldest' || value === 'popular' || value === DEFAULT_SORT_BY) {
+        return value;
+    }
+
+    return DEFAULT_SORT_BY;
+};
+
+const normalizeCategoryId = (value: unknown): number | null => {
+    if (typeof value !== 'string' || value.trim() === '') {
+        return null;
+    }
+
+    const parsed = Number.parseInt(value, 10);
+
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
 export const usePostsAppShell = () => {
     const authStore = useAuthStore();
     const postsStore = usePostsStore();
+    const route = useRoute();
     const router = useRouter();
 
-    const search = ref('');
+    const search = ref(typeof route.query.search === 'string' ? route.query.search : '');
+    const sortBy = ref(normalizeSortBy(route.query.sortBy));
+    const categoryId = ref<number | null>(normalizeCategoryId(route.query.categoryId));
     const isCreatePostModalOpen = ref(false);
 
     const isAuthenticated = computed(() => authStore.isAuthenticated);
@@ -65,8 +88,30 @@ export const usePostsAppShell = () => {
         }
     });
 
+    watch(
+        () => route.query,
+        (query) => {
+            const nextSearch = typeof query.search === 'string' ? query.search : '';
+            const nextSortBy = normalizeSortBy(query.sortBy);
+            const nextCategoryId = normalizeCategoryId(query.categoryId);
+
+            if (search.value !== nextSearch) {
+                search.value = nextSearch;
+            }
+
+            if (sortBy.value !== nextSortBy) {
+                sortBy.value = nextSortBy;
+            }
+
+            if (categoryId.value !== nextCategoryId) {
+                categoryId.value = nextCategoryId;
+            }
+        },
+    );
+
     return {
         authStore,
+        categoryId,
         durationLimitMinutes,
         handleCreateClick,
         handleModalClose,
@@ -76,5 +121,6 @@ export const usePostsAppShell = () => {
         openLogin,
         openRegister,
         search,
+        sortBy,
     };
 };

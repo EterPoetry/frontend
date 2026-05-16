@@ -1,38 +1,43 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
-import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import searchIconUrl from '@/shared/assets/icons/ui/search.svg';
 import gridIconUrl from '@/shared/assets/icons/ui/grid.svg';
 import sortIconUrl from '@/shared/assets/icons/ui/sort.svg';
 import moonIconUrl from '@/shared/assets/icons/ui/moon.svg';
 import sunIconUrl from '@/shared/assets/icons/ui/sun.svg';
 import bellIconUrl from '@/shared/assets/icons/ui/bell.svg';
+import { useAppHeaderControls } from '@/shared/composables/useAppHeaderControls';
 import { useTheme } from '@/shared/composables/useTheme';
 import { uk } from '@/shared/locales/uk';
 import './AppHeader.css';
 
 const search = defineModel<string>('search', { default: '' });
+const sortBy = defineModel<string>('sortBy', { default: 'newest' });
+const categoryId = defineModel<number | null>('categoryId', { default: null });
+
 const { theme, toggleTheme } = useTheme();
 const route = useRoute();
-
-const sortMenuOpen = ref(false);
-const isSearchEnabled = computed(() => route.name === PostRouteNames.HOME || route.name === PostRouteNames.POST);
-const sortOptions = [
-    uk.home.sort.latest,
-    uk.home.sort.popular,
-];
-
-const toggleSortMenu = (): void => {
-    sortMenuOpen.value = !sortMenuOpen.value;
-};
-
-const selectSortOption = (option: string): void => {
-    search.value = search.value;
-    sortMenuOpen.value = false;
-    void option;
-};
+const isSearchEnabled = computed(() => route.meta.searchEnabled === true);
+const headerControls = useAppHeaderControls({
+    categoryId,
+    sortBy,
+});
+const {
+    categoryMenuOpen,
+    categorySearch,
+    clearCategory,
+    filteredCategories,
+    isCategoryActive,
+    isSortActive,
+    selectCategory,
+    selectSortOption,
+    sortMenuOpen,
+    sortOptions,
+    toggleCategoryMenu,
+    toggleSortMenu,
+} = headerControls;
 </script>
 
 <template>
@@ -48,29 +53,93 @@ const selectSortOption = (option: string): void => {
     </label>
 
     <div v-if="isSearchEnabled" class="app-header__tools">
-      <button type="button" class="app-header__icon-btn" :aria-label="uk.home.gridViewLabel">
-        <img :src="gridIconUrl" :alt="uk.home.gridViewLabel" class="app-header__icon-image" />
-      </button>
-
-      <div class="app-header__sort">
+      <div :ref="headerControls.categoryMenuRef" class="app-header__sort">
         <button
             type="button"
             class="app-header__icon-btn"
+            :class="{ 'app-header__icon-btn--active': isCategoryActive }"
+            :aria-label="uk.home.categories.filterLabel"
+            @click="toggleCategoryMenu"
+        >
+          <img :src="gridIconUrl" :alt="uk.home.categories.filterLabel" class="app-header__icon-image" />
+          <span v-if="isCategoryActive" class="app-header__active-dot" />
+        </button>
+
+        <div v-if="categoryMenuOpen" class="app-header__sort-menu app-header__category-menu">
+          <label class="app-header__category-search">
+            <img :src="searchIconUrl" :alt="uk.home.categories.searchPlaceholder" class="app-header__category-search-icon" />
+            <input
+                v-model="categorySearch"
+                type="text"
+                :placeholder="uk.home.categories.searchPlaceholder"
+                class="app-header__category-search-input"
+                @click.stop
+            />
+          </label>
+
+          <div class="app-header__category-list">
+            <button
+                v-if="isCategoryActive && !categorySearch"
+                type="button"
+                class="app-header__sort-option"
+                @click="clearCategory"
+            >
+              <span class="app-header__sort-option-spacer" />
+              {{ uk.home.categories.filterLabel }}
+            </button>
+
+            <div v-if="!filteredCategories.length" class="app-header__category-empty">
+              {{ uk.home.categories.noResults }}
+            </div>
+
+            <button
+                v-for="category in filteredCategories"
+                :key="category.categoryId"
+                type="button"
+                class="app-header__sort-option"
+                :class="{ 'app-header__sort-option--selected': categoryId === category.categoryId }"
+                @click="selectCategory(category)"
+            >
+              <span
+                  v-if="categoryId === category.categoryId"
+                  class="app-header__sort-option-check"
+                  aria-hidden="true"
+              />
+              <span v-else class="app-header__sort-option-spacer" />
+              {{ category.categoryName }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div :ref="headerControls.sortMenuRef" class="app-header__sort">
+        <button
+            type="button"
+            class="app-header__icon-btn"
+            :class="{ 'app-header__icon-btn--active': isSortActive }"
             :aria-label="uk.home.sort.ariaLabel"
             @click="toggleSortMenu"
         >
           <img :src="sortIconUrl" :alt="uk.home.sort.ariaLabel" class="app-header__icon-image" />
+          <span v-if="isSortActive" class="app-header__active-dot" />
         </button>
 
         <div v-if="sortMenuOpen" class="app-header__sort-menu">
           <button
               v-for="option in sortOptions"
-              :key="option"
+              :key="option.value"
               type="button"
               class="app-header__sort-option"
-              @click="selectSortOption(option)"
+              :class="{ 'app-header__sort-option--selected': sortBy === option.value }"
+              @click="selectSortOption(option.value)"
           >
-            {{ option }}
+            <span
+                v-if="sortBy === option.value"
+                class="app-header__sort-option-check"
+                aria-hidden="true"
+            />
+            <span v-else class="app-header__sort-option-spacer" />
+            {{ option.label }}
           </button>
         </div>
       </div>

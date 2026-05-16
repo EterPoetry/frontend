@@ -3,11 +3,30 @@ import { readFile } from 'node:fs/promises';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadEnvFile } from 'node:process';
+import type { ViteDevServer } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
-const indexPath = path.join(distDir, 'index.html');
+const isDevelopment = process.env.NODE_ENV?.trim() !== 'production';
+const indexPath = path.join(isDevelopment ? rootDir : distDir, 'index.html');
+
+const envMode = process.env.NODE_ENV?.trim();
+const envFiles = [
+    envMode ? `.env.${envMode}.local` : null,
+    envMode ? `.env.${envMode}` : null,
+    '.env.local',
+    '.env',
+].filter(Boolean);
+
+for (const envFile of envFiles) {
+    const envPath = path.join(rootDir, envFile);
+
+    if (existsSync(envPath)) {
+        loadEnvFile(envPath);
+    }
+}
 
 const requireEnv = (name) => {
     const value = process.env[name]?.trim();
@@ -29,7 +48,26 @@ const requireNumberEnv = (name) => {
     return value;
 };
 
-const port = requireNumberEnv('PORT');
+const getOptionalNumberEnv = (name) => {
+    const rawValue = process.env[name]?.trim();
+
+    if (!rawValue) {
+        return null;
+    }
+
+    const value = Number(rawValue);
+
+    if (!Number.isFinite(value) || value <= 0) {
+        throw new Error(`${name} must be a positive number`);
+    }
+
+    return value;
+};
+
+const port = isDevelopment
+    ? (getOptionalNumberEnv('DEV_PORT') ?? 3902)
+    : requireNumberEnv('PORT');
+const host = isDevelopment ? '127.0.0.1' : '0.0.0.0';
 const siteUrl = requireEnv('SITE_URL').replace(/\/$/, '');
 const apiBaseUrl = requireEnv('META_API_BASE_URL').replace(/\/$/, '');
 const postMetaPathTemplate = requireEnv('META_POST_PATH');
@@ -67,6 +105,15 @@ const contentTypes = {
 
 const metaCache = new Map();
 let indexTemplatePromise;
+let viteDevServer: ViteDevServer | null = null;
+
+type RenderOptions = {
+    renderPostBody?: boolean;
+};
+
+type HttpError = Error & {
+    status?: number;
+};
 
 const getIndexTemplate = () => {
     if (!indexTemplatePromise) {
@@ -392,7 +439,7 @@ const renderPostBody = (meta) => {
     return `<main><article><h1>${heading}</h1>${descriptionBlock}${originAuthorBlock}${poemSection}${audioBlock}</article></main>`;
 };
 
-const renderAppHtml = (meta, options = {}) => {
+const renderAppHtml = (meta, options: RenderOptions = {}) => {
     if (options.renderPostBody) {
         return `<div id="app">${renderPostBody(meta)}</div>`;
     }
@@ -400,7 +447,7 @@ const renderAppHtml = (meta, options = {}) => {
     return '<div id="app"></div>';
 };
 
-const renderIndexWithMeta = async (meta, options = {}) => {
+const renderIndexWithMeta = async (meta, routePath = '/', options: RenderOptions = {}) => {
     const template = await getIndexTemplate();
     const replacements = {
         __META_TITLE__: meta.title,
@@ -420,7 +467,7 @@ const renderIndexWithMeta = async (meta, options = {}) => {
         __APP_HTML__: renderAppHtml(meta, options),
     };
 
-    return Object.entries(replacements).reduce(
+    const html = Object.entries(replacements).reduce(
         (html, [token, value]) => html.replaceAll(
             token,
             token === '__META_AUDIO_TAGS__'
@@ -432,6 +479,12 @@ const renderIndexWithMeta = async (meta, options = {}) => {
         ),
         template,
     );
+
+    if (isDevelopment && viteDevServer) {
+        return viteDevServer.transformIndexHtml(routePath, html);
+    }
+
+    return html;
 };
 
 const getCachedMeta = (key) => {
@@ -459,12 +512,31 @@ const fetchJson = async (url) => {
     });
 
     if (!response.ok) {
-        const error = new Error(`Meta API responded with ${response.status}`);
+        const error = new Error(`Meta API responded with ${response.status}`) as HttpError;
         error.status = response.status;
         throw error;
     }
 
     return response.json();
+};
+
+const handleViteRequest = async (req, res) => {
+    if (!viteDevServer) {
+        return false;
+    }
+
+    await new Promise((resolve, reject) => {
+        viteDevServer?.middlewares(req, res, (error) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+
+            resolve(undefined);
+        });
+    });
+
+    return res.writableEnded;
 };
 
 const fetchPageMeta = async (pathTemplate, id) => {
@@ -499,8 +571,8 @@ const sendHtml = async (res, html, statusCode = 200) => {
     res.end(html);
 };
 
-const sendFallbackHtml = async (req, res, routePath = '/', options = {}) => {
-    const html = await renderIndexWithMeta(normalizeMeta(req, defaultMeta, routePath), options);
+const sendFallbackHtml = async (req, res, routePath = '/', options: RenderOptions = {}) => {
+    const html = await renderIndexWithMeta(normalizeMeta(req, defaultMeta, routePath), routePath, options);
     await sendHtml(res, html);
 };
 
@@ -551,7 +623,23 @@ const handleRequest = async (req, res) => {
     const requestUrl = getRequestUrl(req);
     const pathname = requestUrl.pathname;
 
-    if (sendStaticFile(req, res, pathname)) {
+    if (
+        isDevelopment
+        && (
+            pathname.startsWith('/@vite/')
+            || pathname.startsWith('/@fs/')
+            || pathname.startsWith('/@id/')
+            || pathname.startsWith('/src/')
+            || pathname.startsWith('/node_modules/')
+            || path.extname(pathname) !== ''
+        )
+    ) {
+        if (await handleViteRequest(req, res)) {
+            return;
+        }
+    }
+
+    if (!isDevelopment && sendStaticFile(req, res, pathname)) {
         return;
     }
 
@@ -562,7 +650,7 @@ const handleRequest = async (req, res) => {
 
         try {
             const meta = await getPostMeta(req, postMatch[1], routePath);
-            const html = await renderIndexWithMeta(meta, { renderPostBody: true });
+            const html = await renderIndexWithMeta(meta, routePath, { renderPostBody: true });
             await sendHtml(res, html);
         } catch (error) {
             console.error(`[meta] Failed to render post ${postMatch[1]}:`, error);
@@ -585,7 +673,7 @@ const handleRequest = async (req, res) => {
 
         try {
             const meta = await getProfileMeta(req, profileMatch[1], routePath);
-            const html = await renderIndexWithMeta(meta);
+            const html = await renderIndexWithMeta(meta, routePath);
             await sendHtml(res, html);
         } catch (error) {
             console.error(`[meta] Failed to render profile ${profileMatch[1]}:`, error);
@@ -598,12 +686,36 @@ const handleRequest = async (req, res) => {
     await sendFallbackHtml(req, res, pathname);
 };
 
-createServer((req, res) => {
-    handleRequest(req, res).catch((error) => {
-        console.error('[server] Unhandled request error:', error);
-        res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
-        res.end('Internal server error');
+const bootstrap = async () => {
+    const httpServer = createServer((req, res) => {
+        handleRequest(req, res).catch((error) => {
+            console.error('[server] Unhandled request error:', error);
+            res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+            res.end('Internal server error');
+        });
     });
-}).listen(port, () => {
-    console.log(`Frontend meta server listening on ${port}`);
+
+    if (isDevelopment) {
+        const { createServer: createViteServer } = await import('vite');
+
+        viteDevServer = await createViteServer({
+            appType: 'custom',
+            root: rootDir,
+            server: {
+                middlewareMode: true,
+                hmr: {
+                    server: httpServer,
+                },
+            },
+        });
+    }
+
+    httpServer.listen(port, host, () => {
+        console.log(`Frontend meta server listening on http://${host}:${port}`);
+    });
+};
+
+bootstrap().catch((error) => {
+    console.error('[server] Failed to start:', error);
+    process.exit(1);
 });

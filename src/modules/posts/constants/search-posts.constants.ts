@@ -1,0 +1,2 @@
+export const SEARCH_POSTS_PAGE_LIMIT = 12;
+export const SEARCH_POSTS_LOAD_MORE_ROOT_MARGIN = '240px 0px';

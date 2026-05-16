@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import StickyPostPlayer from '@/modules/posts/components/StickyPostPlayer/StickyPostPlayer.vue';
 import { usePostPlayer } from '@/modules/posts/composables/usePostPlayer';
 import AppHeader from '@/shared/components/AppHeader/AppHeader.vue';
@@ -15,8 +16,12 @@ defineProps<{
 }>();
 
 const search = defineModel<string>('search', { default: '' });
+const sortBy = defineModel<string>('sortBy', { default: 'newest' });
+const categoryId = defineModel<number | null>('categoryId', { default: null });
+const route = useRoute();
 const player = usePostPlayer();
 const hasPlayer = computed(() => player.hasActivePost.value);
+const hasCompactHeader = computed(() => route.meta.searchEnabled !== true);
 
 defineEmits<{
     (e: 'create'): void;
@@ -28,7 +33,13 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="app-shell" :class="{ 'app-shell--with-player': hasPlayer }">
+  <div
+      class="app-shell"
+      :class="{
+        'app-shell--with-player': hasPlayer,
+        'app-shell--compact-header': hasCompactHeader,
+      }"
+  >
     <AppSidebar
         :is-authenticated="isAuthenticated"
         :active-nav-key="activeNavKey"
@@ -39,7 +50,7 @@ defineEmits<{
     />
 
     <div class="app-shell__main">
-      <AppHeader v-model:search="search" />
+      <AppHeader v-model:search="search" v-model:sort-by="sortBy" v-model:category-id="categoryId" />
       <main class="app-shell__content">
         <slot />
       </main>

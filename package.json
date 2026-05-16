@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "NODE_ENV=development node --experimental-strip-types server/index.ts",
     "dev:prod": "vite --mode production",
-    "build": "vue-tsc -b && vite build",
-    "start": "node server/index.js",
+    "build": "vue-tsc -b && tsc -p tsconfig.server.json && vite build",
+    "start": "node --experimental-strip-types server/index.ts",
     "preview": "vite preview"
   },
   "dependencies": {

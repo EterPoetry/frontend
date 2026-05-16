@@ -14,6 +14,8 @@ import { EndPostListenResponse } from '@/modules/posts/interfaces/end-post-liste
 import { GetCategoriesQuery } from '@/modules/posts/interfaces/get-categories-query.interface';
 import { GetPopularPostsQuery } from '@/modules/posts/interfaces/get-popular-posts-query.interface';
 import { GetPopularPostsResponse } from '@/modules/posts/interfaces/get-popular-posts-response.interface';
+import { GetSearchPostsQuery } from '@/modules/posts/interfaces/get-search-posts-query.interface';
+import { GetSearchPostsResponse } from '@/modules/posts/interfaces/get-search-posts-response.interface';
 import { DeletePostResponse } from '@/modules/posts/interfaces/delete-post-response.interface';
 import { PostCategory } from '@/modules/posts/interfaces/post-category.interface';
 import { PostComment } from '@/modules/posts/interfaces/post-comment.interface';
@@ -73,6 +75,10 @@ export const usePostsStore = defineStore('posts', {
         popularPostsSnapshotGeneratedAt: null,
         popularPostsNextCursor: null,
         popularPostsHasMore: false,
+        searchFeedPosts: [],
+        searchFeedTotal: 0,
+        searchFeedOffset: 0,
+        searchFeedHasMore: false,
         currentListenSession: null,
     }),
 
@@ -181,6 +187,27 @@ export const usePostsStore = defineStore('posts', {
             };
         },
 
+        async searchPosts(query: GetSearchPostsQuery = {}): Promise<GetSearchPostsResponse> {
+            const response = await api.get<GetSearchPostsResponse>('/posts/search', {
+                params: query,
+            });
+
+            const nextItems = response.data.items.map(applyRememberedPostLikeState);
+            const nextOffset = typeof query.offset === 'number' ? query.offset : 0;
+
+            this.searchFeedPosts = nextOffset > 0
+                ? [...this.searchFeedPosts, ...nextItems]
+                : nextItems;
+            this.searchFeedTotal = response.data.total;
+            this.searchFeedOffset = response.data.offset;
+            this.searchFeedHasMore = this.searchFeedPosts.length < response.data.total;
+
+            return {
+                ...response.data,
+                items: this.searchFeedPosts,
+            };
+        },
+
         async likePost(postId: number): Promise<{ ok: boolean; likesCount: number }> {
             const response = await api.post<{ ok: boolean; likesCount: number }>(`/posts/${postId}/like`);
 
@@ -262,6 +289,13 @@ export const usePostsStore = defineStore('posts', {
             this.popularPostsSnapshotGeneratedAt = null;
             this.popularPostsNextCursor = null;
             this.popularPostsHasMore = false;
+        },
+
+        clearSearchPosts(): void {
+            this.searchFeedPosts = [];
+            this.searchFeedTotal = 0;
+            this.searchFeedOffset = 0;
+            this.searchFeedHasMore = false;
         },
 
         clearPostComments(): void {

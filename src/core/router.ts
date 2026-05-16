@@ -43,7 +43,7 @@ const routes: Array<RouteRecordRaw> = [
         path: '/home',
         name: PostRouteNames.HOME,
         component: () => import('@/modules/posts/pages/HomePage/HomePage.vue'),
-        meta: { isPublic: true, ...SEO_ROUTES.home }
+        meta: { isPublic: true, searchEnabled: true, ...SEO_ROUTES.home }
     },
     {
         path: '/posts/:postId(\\d+)',
