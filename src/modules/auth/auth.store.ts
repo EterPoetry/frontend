@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import api from '@/core/api';
 import router from '@/core/router';
 import { AuthResponse } from '@/modules/auth/interfaces/auth-response.interface';
+import { UpdateProfilePayload } from '@/modules/profile/interfaces/update-profile-payload.interface';
 import { AuthState } from '@/modules/auth/interfaces/auth-state.interface';
 import { AuthData } from '@/modules/auth/interfaces/auth-data.interface';
 import { User } from '@/modules/auth/interfaces/user.interface';
@@ -31,6 +32,29 @@ export const useAuthStore = defineStore('auth', {
                 this.user = null;
                 throw error;
             }
+        },
+
+        async updateProfile(payload: UpdateProfilePayload): Promise<User | null> {
+            const response = await api.patch<User>('/profile/me', payload);
+            this.user = response.data;
+
+            return this.user;
+        },
+
+        async uploadAvatar(file: File): Promise<User | null> {
+            const formData = new FormData();
+            formData.append('avatar', file);
+            const response = await api.patch<User>('/profile/me/avatar', formData);
+            this.user = response.data;
+
+            return this.user;
+        },
+
+        async removeAvatar(): Promise<User | null> {
+            const response = await api.delete<User>('/profile/me/avatar');
+            this.user = response.data;
+
+            return this.user;
         },
 
         async login(data: Pick<AuthData, 'email' | 'password'>): Promise<boolean> {

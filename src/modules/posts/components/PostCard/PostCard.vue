@@ -10,11 +10,12 @@ import PostCategoryTags from '@/modules/posts/components/PostCategoryTags/PostCa
 import { PostCardProps } from '@/modules/posts/interfaces/post-card-props.interface';
 import { PostsEvents } from '@/modules/posts/enums/posts-events.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
+import ProfileIdentity from '@/shared/components/ProfileIdentity/ProfileIdentity.vue';
 import { uk } from '@/shared/locales/uk';
 import {
     formatPostDuration,
 } from '@/modules/posts/utils/post-formatting.utils';
-import { getAuthorInitial } from '@/modules/posts/utils/post-author.utils';
 import { formatCompactNumber } from '@/shared/utils/number.utils';
 import './PostCard.css';
 
@@ -38,7 +39,7 @@ const handleLikeClick = (): void => {
 };
 
 const handleCommentClick = (): void => {
-    navigateToPostComments(props.post.postId);
+    navigateToPostComments(props.post.slug, props.post.postId);
 };
 </script>
 
@@ -47,38 +48,34 @@ const handleCommentClick = (): void => {
     <div class="post-card__main">
       <div class="post-card__meta-block">
         <RouterLink
-            :to="{ name: PostRouteNames.POST, params: { postId: post.postId } }"
+            :to="{ name: PostRouteNames.POST, params: { slug: post.slug } }"
             class="post-card__meta-link"
         >
           <h3 class="post-card__title">
             <span class="post-card__title-link">
-              {{ post.title || 'Без назви' }}
+              {{ post.title || uk.posts.player.untitled }}
             </span>
           </h3>
-
-          <div class="post-card__meta-row">
-            <span v-if="post.originAuthorName" class="post-card__origin-author">
-              {{ post.originAuthorName }}
-            </span>
-            <span v-if="post.originAuthorName" class="post-card__dot" aria-hidden="true" />
-
-            <span class="post-card__author">
-              <img
-                  v-if="post.author.photo"
-                  :src="post.author.photo"
-                  :alt="post.author.name"
-                  class="post-card__author-photo"
-              />
-              <span v-else class="post-card__author-fallback">
-                {{ getAuthorInitial(post.author.name) }}
-              </span>
-
-              <span class="post-card__author-name">
-                {{ post.author.name }}
-              </span>
-            </span>
-          </div>
         </RouterLink>
+
+        <div class="post-card__meta-row">
+          <span class="post-card__origin-author">
+            {{ post.originAuthorName || uk.posts.details.originalWork }}
+          </span>
+          <span class="post-card__dot" aria-hidden="true" />
+
+          <RouterLink
+              :to="{ name: ProfileRouteNames.PROFILE_BY_USERNAME, params: { username: post.author.username } }"
+              class="post-card__author"
+          >
+            <ProfileIdentity
+                :name="post.author.name"
+                :username="post.author.username"
+                :photo="post.author.photo"
+                size="xs"
+            />
+          </RouterLink>
+        </div>
 
         <PostCategoryTags :categories="post.categories" compact class="post-card__tags" />
       </div>

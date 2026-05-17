@@ -379,7 +379,7 @@
 }
 
 :root[data-theme='dark'] .post-editor__replace-audio img {
-    filter: brightness(1.15);
+    filter: brightness(0) saturate(100%) invert(84%) sepia(10%) saturate(286%) hue-rotate(343deg) brightness(93%) contrast(92%);
 }
 
 :root[data-theme='dark'] .post-editor__replace-spinner {
@@ -403,6 +403,25 @@
     font-size: 15px;
 }
 
+.post-editor__delete-draft {
+    margin-right: auto;
+    border-color: rgba(180, 78, 61, 0.72);
+    color: #b44e3d;
+}
+
+.post-editor__delete-draft:hover:not(:disabled) {
+    background: rgba(180, 78, 61, 0.08);
+}
+
+:root[data-theme='dark'] .post-editor__delete-draft {
+    border-color: rgba(212, 116, 97, 0.78);
+    color: #d47461;
+}
+
+:root[data-theme='dark'] .post-editor__delete-draft:hover:not(:disabled) {
+    background: rgba(212, 116, 97, 0.12);
+}
+
 @media (max-width: 900px) {
     .post-editor {
         padding: 28px 18px 40px;
@@ -416,6 +435,14 @@
         padding-top: 44px;
         grid-template-columns: 1fr;
         align-items: flex-start;
+    }
+
+    .post-editor__actions {
+        flex-wrap: wrap;
+    }
+
+    .post-editor__delete-draft {
+        margin-right: 0;
     }
 
     .post-editor__replace-audio {

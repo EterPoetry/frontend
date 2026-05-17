@@ -125,39 +125,15 @@
 
 .post-card__author {
     display: inline-flex;
-    align-items: center;
-    gap: 6px;
     min-width: 0;
+    color: var(--color-text-muted);
+    text-decoration: none;
 }
 
-.post-card__author-photo,
-.post-card__author-fallback {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.post-card__author-photo {
-    object-fit: cover;
-}
-
-.post-card__author-fallback {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-surface-accent-strong);
+.post-card__author:hover {
     color: var(--color-primary);
-    font-size: 0.7rem;
-    font-weight: 700;
 }
 
-.post-card__author-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 .post-card__tags {
     display: flex;
@@ -299,7 +275,8 @@
         flex: 1 1 100%;
     }
 
-    .post-card__author-name {
+    .post-card__author .profile-identity__name,
+    .post-card__author .profile-identity__username {
         white-space: normal;
         overflow: visible;
         text-overflow: clip;

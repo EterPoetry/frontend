@@ -1,0 +1,116 @@
+.profile-published-posts,
+.profile-published-posts__skeleton-list {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+}
+
+.profile-published-posts__controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px 16px;
+    padding: 4px 0 8px;
+    border-bottom: 1px solid var(--color-border-soft);
+}
+
+.profile-published-posts__filter-group,
+.profile-published-posts__sort-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.profile-published-posts__controls-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--color-border-soft);
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.profile-published-posts__filter-chip,
+.profile-published-posts__sort-chip {
+    padding: 4px 10px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        border-color 140ms ease,
+        color 140ms ease,
+        background 140ms ease;
+    white-space: nowrap;
+}
+
+.profile-published-posts__filter-chip:hover,
+.profile-published-posts__sort-chip:hover {
+    border-color: color-mix(in srgb, var(--color-border-soft) 60%, var(--color-primary) 40%);
+    color: var(--color-primary);
+}
+
+.profile-published-posts__filter-chip--active,
+.profile-published-posts__sort-chip--active {
+    border-color: var(--color-primary);
+    background: var(--color-surface-accent);
+    color: var(--color-primary);
+}
+
+.profile-published-posts__sort-arrow {
+    display: inline-block;
+    margin-left: 2px;
+    transition: transform 200ms ease;
+}
+
+.profile-published-posts__sort-arrow--asc {
+    transform: rotate(180deg);
+}
+
+.profile-published-posts__state,
+.profile-published-posts__footer-error {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.profile-published-posts__state {
+    padding: 20px 0;
+}
+
+.profile-published-posts__footer-error {
+    margin: 0;
+}
+
+.profile-published-posts__more {
+    display: flex;
+    justify-content: center;
+}
+
+.profile-published-posts__more .btn {
+    width: auto;
+    padding: 9px 22px;
+    font-size: 0.9rem;
+    min-height: 0;
+}
+
+@media (max-width: 720px) {
+    .profile-published-posts__controls {
+        gap: 6px 10px;
+        justify-content: flex-start;
+    }
+
+    .profile-published-posts__filter-group,
+    .profile-published-posts__sort-group {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .profile-published-posts__controls-divider {
+        display: none;
+    }
+}

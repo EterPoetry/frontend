@@ -3,6 +3,8 @@ export interface PublicProfile {
     name: string;
     username: string;
     photo: string | null;
+    bio?: string | null;
+    link?: string | null;
     isPremium: boolean;
     isSubscribed: boolean;
     createdAt: string;

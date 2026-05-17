@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import { uk } from "@/shared/locales/uk";
 import { updateSeoMeta } from '@/core/seo';
@@ -58,7 +59,29 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, searchEnabled: true, feedKind: 'favorites', ...SEO_ROUTES.favorites }
     },
     {
-        path: '/posts/:postId(\\d+)',
+        path: '/profile',
+        name: ProfileRouteNames.PROFILE_ME,
+        component: () => import('@/modules/profile/pages/ProfilePage/ProfilePage.vue'),
+        meta: { requiresAuth: true, title: uk.profile.title, ...noIndexMeta }
+    },
+    {
+        path: '/profile/:userId(\\d+)',
+        name: ProfileRouteNames.PROFILE_PUBLIC,
+        component: () => import('@/modules/profile/pages/ProfilePage/ProfilePage.vue'),
+        meta: { isPublic: true, title: uk.profile.title }
+    },
+    {
+        path: '/@:username',
+        name: ProfileRouteNames.PROFILE_BY_USERNAME,
+        component: () => import('@/modules/profile/pages/ProfilePage/ProfilePage.vue'),
+        meta: { isPublic: true, title: uk.profile.title }
+    },
+    {
+        path: '/:username([a-zA-Z0-9_]{3,32})',
+        redirect: (to) => ({ name: ProfileRouteNames.PROFILE_BY_USERNAME, params: { username: to.params.username } }),
+    },
+    {
+        path: '/posts/:slug',
         name: PostRouteNames.POST,
         component: () => import('@/modules/posts/pages/PostPage/PostPage.vue'),
         meta: { isPublic: true, ...SEO_ROUTES.post }

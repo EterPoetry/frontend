@@ -11,25 +11,53 @@ import { CreatePostModalEmits } from '@/modules/posts/interfaces/create-post-mod
 import { CreatePostModalProps } from '@/modules/posts/interfaces/create-post-modal-props.interface';
 import { RecordingFormatProfile } from '@/modules/posts/interfaces/recording-format-profile.interface';
 import { TIME_CONVERSION } from '@/shared/constants/time.constants';
-import { getApiErrorMessage } from '@/shared/utils/api-error.utils';
 import { uk } from '@/shared/locales/uk';
 import { formatSecondsToClock } from '@/shared/utils/time.utils';
 
 type CreatePostMode = 'record' | 'upload';
+const MICROPHONE_REQUEST_TIMEOUT_MS = 10000;
 
 const RECORDING_FORMAT_PROFILES: RecordingFormatProfile[] = [
-    { mimeType: 'audio/mp4;codecs=mp4a.40.2', fileExtension: 'm4a' },
-    { mimeType: 'audio/mp4', fileExtension: 'm4a' },
-    { mimeType: 'audio/aac', fileExtension: 'aac' },
-    { mimeType: 'audio/ogg;codecs=opus', fileExtension: 'ogg' },
-    { mimeType: 'audio/ogg', fileExtension: 'ogg' },
+    { mimeType: 'audio/mp4;codecs=mp4a.40.2', fileExtension: 'm4a', audioBitsPerSecond: 320000 },
+    { mimeType: 'audio/mp4', fileExtension: 'm4a', audioBitsPerSecond: 320000 },
+    { mimeType: 'audio/aac', fileExtension: 'aac', audioBitsPerSecond: 320000 },
+    { mimeType: 'audio/ogg;codecs=opus', fileExtension: 'ogg', audioBitsPerSecond: 256000 },
+    { mimeType: 'audio/ogg', fileExtension: 'ogg', audioBitsPerSecond: 256000 },
 ];
+
+const RAW_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+    channelCount: { ideal: 1 },
+    sampleRate: { ideal: 48000 },
+    sampleSize: { ideal: 24 },
+};
+
+const RECORDING_DEBUG_PREFIX = '[CreatePostModal recording]';
 
 const createEmptySelection = (): AudioSelection => ({
     file: null,
     previewUrl: '',
     title: '',
 });
+
+const getMicrophonePermissionState = async (): Promise<PermissionState | null> => {
+    if (!navigator.permissions?.query) {
+        return null;
+    }
+
+    try {
+        const status = await navigator.permissions.query({
+            name: 'microphone' as PermissionName,
+        });
+
+        return status.state;
+    } catch (error) {
+        console.warn(`${RECORDING_DEBUG_PREFIX} Failed to query microphone permission state.`, error);
+        return null;
+    }
+};
 
 export const useCreatePostModal = (
     props: CreatePostModalProps,
@@ -42,6 +70,7 @@ export const useCreatePostModal = (
     const isSubmitting = ref(false);
     const isProcessing = ref(false);
     const isRecording = ref(false);
+    const isRequestingMicrophoneAccess = ref(false);
     const isRemoveRecordConfirmOpen = ref(false);
     const errorMessage = ref('');
     const recordedDurationSeconds = ref(0);
@@ -96,6 +125,7 @@ export const useCreatePostModal = (
         isSubmitting.value = false;
         isProcessing.value = false;
         isRecording.value = false;
+        isRequestingMicrophoneAccess.value = false;
         recordedDurationSeconds.value = 0;
         recordedChunks.value = [];
         stopRecordingTimer();
@@ -167,14 +197,103 @@ export const useCreatePostModal = (
 
     const getSupportedRecordingProfile = (): RecordingFormatProfile | null => {
         if (!window.MediaRecorder) {
+            console.warn(`${RECORDING_DEBUG_PREFIX} MediaRecorder is unavailable.`);
             return null;
         }
 
         if (typeof MediaRecorder.isTypeSupported !== 'function') {
+            console.info(`${RECORDING_DEBUG_PREFIX} MediaRecorder.isTypeSupported is unavailable, using first profile fallback.`, RECORDING_FORMAT_PROFILES[0] ?? null);
             return RECORDING_FORMAT_PROFILES[0] ?? null;
         }
 
-        return RECORDING_FORMAT_PROFILES.find((profile) => MediaRecorder.isTypeSupported(profile.mimeType)) ?? null;
+        const supportedProfile = RECORDING_FORMAT_PROFILES.find((profile) => MediaRecorder.isTypeSupported(profile.mimeType)) ?? null;
+        console.info(`${RECORDING_DEBUG_PREFIX} Selected recording profile.`, supportedProfile);
+
+        return supportedProfile;
+    };
+
+    const requestRecordingStream = async (): Promise<MediaStream> => {
+        const permissionState = await getMicrophonePermissionState();
+        console.info(`${RECORDING_DEBUG_PREFIX} Requesting media stream.`, {
+            audioConstraints: true,
+            isSecureContext: window.isSecureContext,
+            origin: window.location.origin,
+            visibilityState: document.visibilityState,
+            permissionState,
+        });
+
+        const stream = await Promise.race([
+            navigator.mediaDevices.getUserMedia({ audio: true }),
+            new Promise<never>((_, reject) => {
+                window.setTimeout(() => {
+                    reject(new Error('Microphone access request timed out.'));
+                }, MICROPHONE_REQUEST_TIMEOUT_MS);
+            }),
+        ]);
+        console.info(`${RECORDING_DEBUG_PREFIX} Media stream acquired.`, {
+            trackSettings: stream.getAudioTracks().map((track) => track.getSettings()),
+            trackConstraints: stream.getAudioTracks().map((track) => track.getConstraints()),
+        });
+
+        await Promise.allSettled(stream.getAudioTracks().map(async (track) => {
+            if (typeof track.applyConstraints !== 'function') {
+                return;
+            }
+
+            try {
+                await track.applyConstraints(RAW_AUDIO_CONSTRAINTS);
+                console.info(`${RECORDING_DEBUG_PREFIX} Applied raw audio constraints.`, {
+                    trackSettings: track.getSettings(),
+                    trackConstraints: track.getConstraints(),
+                });
+            } catch (error) {
+                console.warn(`${RECORDING_DEBUG_PREFIX} Failed to apply raw audio constraints.`, {
+                    error,
+                    requestedConstraints: RAW_AUDIO_CONSTRAINTS,
+                    trackSettings: track.getSettings(),
+                });
+            }
+        }));
+
+        return stream;
+    };
+
+    const createMediaRecorderInstance = (
+        stream: MediaStream,
+        profile: RecordingFormatProfile,
+    ): MediaRecorder => {
+        const recorderOptions: MediaRecorderOptions[] = [
+            {
+                mimeType: profile.mimeType,
+                audioBitsPerSecond: profile.audioBitsPerSecond,
+            },
+            {
+                mimeType: profile.mimeType,
+            },
+            {
+                audioBitsPerSecond: profile.audioBitsPerSecond,
+            },
+            {},
+        ];
+
+        let lastError: unknown = null;
+
+        for (const options of recorderOptions) {
+            try {
+                console.info(`${RECORDING_DEBUG_PREFIX} Creating MediaRecorder.`, {
+                    options,
+                });
+                return new MediaRecorder(stream, options);
+            } catch (error) {
+                console.warn(`${RECORDING_DEBUG_PREFIX} Failed to create MediaRecorder.`, {
+                    options,
+                    error,
+                });
+                lastError = error;
+            }
+        }
+
+        throw lastError;
     };
 
     const applySelectedFile = async (file: File): Promise<void> => {
@@ -237,9 +356,15 @@ export const useCreatePostModal = (
 
     const stopRecording = (): void => {
         if (!mediaRecorder.value || mediaRecorder.value.state === 'inactive') {
+            console.info(`${RECORDING_DEBUG_PREFIX} Stop requested, but recorder is inactive.`);
             return;
         }
 
+        console.info(`${RECORDING_DEBUG_PREFIX} Stopping recording.`, {
+            state: mediaRecorder.value.state,
+            durationSeconds: recordedDurationSeconds.value,
+        });
+        mediaRecorder.value.requestData();
         mediaRecorder.value.stop();
         stopRecordingTimer();
         cleanupMediaStream();
@@ -248,9 +373,15 @@ export const useCreatePostModal = (
 
     const startRecording = async (): Promise<void> => {
         errorMessage.value = '';
+        console.info(`${RECORDING_DEBUG_PREFIX} Start recording requested.`, {
+            hasMediaRecorder: !!window.MediaRecorder,
+            hasMediaDevices: !!navigator.mediaDevices,
+            hasGetUserMedia: !!navigator.mediaDevices?.getUserMedia,
+        });
 
         if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) {
             errorMessage.value = uk.posts.modal.errors.recordingUnavailable;
+            console.warn(`${RECORDING_DEBUG_PREFIX} Recording is unavailable in this environment.`);
             return;
         }
 
@@ -258,6 +389,7 @@ export const useCreatePostModal = (
 
         if (!supportedProfile) {
             errorMessage.value = uk.posts.modal.errors.recordingUnsupported;
+            console.warn(`${RECORDING_DEBUG_PREFIX} No supported recording profile found.`);
             return;
         }
 
@@ -265,13 +397,28 @@ export const useCreatePostModal = (
             resetSelection('record');
             recordedChunks.value = [];
             recordedDurationSeconds.value = 0;
+            isRequestingMicrophoneAccess.value = true;
 
-            mediaStream.value = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder.value = new MediaRecorder(mediaStream.value, {
-                mimeType: supportedProfile.mimeType,
+            mediaStream.value = await requestRecordingStream();
+            mediaRecorder.value = createMediaRecorderInstance(mediaStream.value, supportedProfile);
+            console.info(`${RECORDING_DEBUG_PREFIX} MediaRecorder created.`, {
+                mimeType: mediaRecorder.value.mimeType,
+                state: mediaRecorder.value.state,
+            });
+
+            mediaRecorder.value.addEventListener('error', (event) => {
+                console.error(`${RECORDING_DEBUG_PREFIX} Recorder error event.`, event);
+                errorMessage.value = uk.posts.modal.errors.recordingUnavailable;
+                stopRecordingTimer();
+                cleanupMediaStream();
+                isRecording.value = false;
             });
 
             mediaRecorder.value.addEventListener('dataavailable', (event: BlobEvent) => {
+                console.info(`${RECORDING_DEBUG_PREFIX} dataavailable event.`, {
+                    chunkSize: event.data.size,
+                    chunkType: event.data.type,
+                });
                 if (event.data.size > 0) {
                     recordedChunks.value.push(event.data);
                 }
@@ -280,6 +427,12 @@ export const useCreatePostModal = (
             mediaRecorder.value.addEventListener('stop', () => {
                 const blob = new Blob(recordedChunks.value, { type: supportedProfile.mimeType });
                 const baseFileName = createRecordedFileName();
+                console.info(`${RECORDING_DEBUG_PREFIX} Recorder stopped.`, {
+                    chunks: recordedChunks.value.length,
+                    blobSize: blob.size,
+                    blobType: blob.type,
+                    fileName: `${baseFileName}.${supportedProfile.fileExtension}`,
+                });
                 const recordedFile = new File([blob], `${baseFileName}.${supportedProfile.fileExtension}`, {
                     type: supportedProfile.mimeType,
                 });
@@ -288,18 +441,50 @@ export const useCreatePostModal = (
                 setSelectedAudio(recordedFile, baseFileName);
             }, { once: true });
 
-            mediaRecorder.value.start();
+            mediaRecorder.value.start(250);
             isRecording.value = true;
+            console.info(`${RECORDING_DEBUG_PREFIX} Recording started.`, {
+                state: mediaRecorder.value.state,
+            });
             recordingIntervalId.value = window.setInterval(() => {
                 recordedDurationSeconds.value += 1;
 
                 if (recordedDurationSeconds.value >= durationLimitSeconds.value) {
+                    console.info(`${RECORDING_DEBUG_PREFIX} Recording reached duration limit.`);
                     stopRecording();
                 }
             }, TIME_CONVERSION.MS_PER_SECOND);
+            isRequestingMicrophoneAccess.value = false;
         } catch (error) {
             cleanupMediaStream();
-            errorMessage.value = getApiErrorMessage(error) || uk.posts.modal.errors.microphoneDenied;
+            console.error(`${RECORDING_DEBUG_PREFIX} Failed to start recording.`, error);
+            isRequestingMicrophoneAccess.value = false;
+            const permissionState = await getMicrophonePermissionState();
+            const isMicrophoneTimeout = error instanceof Error && error.message === 'Microphone access request timed out.';
+            const isMicrophoneBlocked = error instanceof DOMException
+                && error.name === 'NotAllowedError';
+
+            console.info(`${RECORDING_DEBUG_PREFIX} Recording start failed context.`, {
+                permissionState,
+                errorName: error instanceof DOMException ? error.name : null,
+            });
+
+            if (isMicrophoneTimeout) {
+                errorMessage.value = uk.posts.modal.errors.microphonePromptTimedOut;
+                return;
+            }
+
+            if (isMicrophoneBlocked && permissionState === 'denied') {
+                errorMessage.value = uk.posts.modal.errors.microphoneBlocked;
+                return;
+            }
+
+            if (isMicrophoneBlocked) {
+                errorMessage.value = uk.posts.modal.errors.microphoneDenied;
+                return;
+            }
+
+            errorMessage.value = uk.posts.modal.errors.microphoneDenied;
         }
     };
 
@@ -342,7 +527,7 @@ export const useCreatePostModal = (
                 return;
             }
 
-            errorMessage.value = getApiErrorMessage(error) || uk.posts.modal.errors.createFailed;
+            errorMessage.value = uk.posts.modal.errors.createFailed;
         }
     };
 
@@ -400,6 +585,7 @@ export const useCreatePostModal = (
         isDragging,
         isProcessing,
         isRecording,
+        isRequestingMicrophoneAccess,
         isRemoveRecordConfirmOpen,
         isSubmitting,
         openFilePicker,

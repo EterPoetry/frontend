@@ -5,14 +5,14 @@ import { COMMENTS_FOCUS_EVENT, COMMENTS_FOCUS_QUERY_TARGET } from '@/modules/pos
 export const useNavigateToPostComments = () => {
     const router = useRouter();
 
-    const navigateToPostComments = (postId: number): void => {
+    const navigateToPostComments = (slug: string, postId: number): void => {
         window.dispatchEvent(new CustomEvent(COMMENTS_FOCUS_EVENT, {
             detail: { postId },
         }));
 
         void router.push({
             name: PostRouteNames.POST,
-            params: { postId },
+            params: { slug },
             query: {
                 focus: COMMENTS_FOCUS_QUERY_TARGET,
                 focusToken: Date.now().toString(),

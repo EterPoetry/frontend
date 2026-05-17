@@ -1,4 +1,4 @@
-import { PostAuthor } from '@/modules/posts/interfaces/post.interface';
+import type { PostAuthor } from '@/modules/posts/interfaces/post-author.interface';
 
 export interface PostComment {
     commentId: number;

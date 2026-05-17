@@ -1,0 +1,189 @@
+.post-complaint-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 200px;
+}
+
+.post-complaint-dialog__loading {
+    padding: 32px 0;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.post-complaint-dialog__fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.post-complaint-dialog__legend {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-strong);
+    margin-bottom: 8px;
+    padding: 0;
+}
+
+.post-complaint-dialog__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.post-complaint-dialog__item {
+    display: block;
+}
+
+.post-complaint-dialog__label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+    cursor: pointer;
+    transition:
+        border-color 140ms ease,
+        background 140ms ease;
+    background: color-mix(in srgb, var(--color-bg-card-strong) 96%, transparent);
+}
+
+.post-complaint-dialog__label:hover {
+    border-color: color-mix(in srgb, var(--color-border-soft) 60%, var(--color-primary) 40%);
+    background: var(--color-surface-accent);
+}
+
+.post-complaint-dialog__radio {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.post-complaint-dialog__radio-circle {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-border-strong);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition:
+        border-color 140ms ease,
+        background 140ms ease;
+    position: relative;
+}
+
+.post-complaint-dialog__radio-circle::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background 140ms ease;
+}
+
+.post-complaint-dialog__radio:checked + .post-complaint-dialog__radio-circle {
+    border-color: var(--color-primary);
+}
+
+.post-complaint-dialog__radio:checked + .post-complaint-dialog__radio-circle::after {
+    background: var(--color-primary);
+}
+
+.post-complaint-dialog__reason-text {
+    color: var(--color-text-main);
+    font-size: 0.95rem;
+    line-height: 1.3;
+}
+
+.post-complaint-dialog__item:has(.post-complaint-dialog__radio:checked) .post-complaint-dialog__label {
+    border-color: color-mix(in srgb, var(--color-border-soft) 40%, var(--color-primary) 60%);
+    background: var(--color-surface-accent);
+}
+
+.post-complaint-dialog__error {
+    margin: 0;
+    color: var(--color-primary);
+    font-size: 0.88rem;
+}
+
+.post-complaint-dialog__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.post-complaint-dialog__actions .btn,
+.post-complaint-dialog__success .btn {
+    padding: 10px 20px;
+    font-size: 0.88rem;
+    min-height: 0;
+}
+
+.post-complaint-dialog__success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0 8px;
+    text-align: center;
+}
+
+.post-complaint-dialog__success-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-surface-accent-strong);
+    border: 1px solid color-mix(in srgb, var(--color-border-soft) 60%, var(--color-primary) 40%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.post-complaint-dialog__success-icon img {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) saturate(100%) invert(34%) sepia(30%) saturate(700%) hue-rotate(340deg) brightness(85%);
+}
+
+:root[data-theme='dark'] .post-complaint-dialog__success-icon img {
+    filter: brightness(0) saturate(100%) invert(84%) sepia(10%) saturate(286%) hue-rotate(343deg) brightness(93%) contrast(92%);
+}
+
+.post-complaint-dialog__success strong {
+    color: var(--color-text-strong);
+    font-size: 1rem;
+}
+
+.post-complaint-dialog__success p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    max-width: 340px;
+}
+
+@media (max-width: 720px) {
+    .post-complaint-dialog__actions {
+        grid-template-columns: 1fr;
+    }
+
+    .post-complaint-dialog__actions .btn:first-child {
+        order: 2;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .post-complaint-dialog__label,
+    .post-complaint-dialog__radio-circle,
+    .post-complaint-dialog__radio-circle::after {
+        transition: none;
+    }
+}

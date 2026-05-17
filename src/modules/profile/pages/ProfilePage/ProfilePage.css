@@ -1,0 +1,81 @@
+.profile-page {
+    min-height: 100%;
+    display: grid;
+    align-content: start;
+    gap: 20px;
+    padding: 28px 32px 52px;
+}
+
+.profile-page__content {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+}
+
+.profile-page__tabs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-page__tab {
+    padding: 0 2px 8px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 180ms ease, border-color 180ms ease;
+}
+
+.profile-page__tab:hover,
+.profile-page__tab--active {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+@media (max-width: 1080px) {
+    .profile-page {
+        padding: 24px 24px 44px;
+    }
+}
+
+@media (max-width: 720px) {
+    .profile-page {
+        padding: 18px 16px 36px;
+    }
+
+    .profile-page__tabs {
+        gap: 14px;
+        overflow-x: auto;
+    }
+
+    .profile-page__tab {
+        white-space: nowrap;
+    }
+}
+
+:root[data-theme='dark'] .profile-page__card {
+    background: var(--color-bg-card-strong);
+    border-color: var(--color-border);
+    box-shadow:
+        0 10px 24px var(--color-shadow-soft),
+        0 0 0 1px color-mix(in srgb, var(--color-border) 60%, var(--color-primary) 8%);
+}
+
+:root[data-theme='dark'] .profile-page__button-icon {
+    filter: brightness(0) saturate(100%) invert(84%) sepia(10%) saturate(286%) hue-rotate(343deg) brightness(93%) contrast(92%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .profile-page__draft-card {
+        transition: none;
+    }
+
+    .sk {
+        animation: none;
+        opacity: 0.6;
+    }
+}

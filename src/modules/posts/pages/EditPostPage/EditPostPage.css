@@ -6,6 +6,12 @@
     position: relative;
 }
 
+.edit-post-page__loading {
+    padding: 28px 24px;
+    color: var(--color-text-muted);
+    font-size: 0.96rem;
+}
+
 @media (max-width: 1080px) {
     .edit-post-page {
         padding: 28px 0 40px;

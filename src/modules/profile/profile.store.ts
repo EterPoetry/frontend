@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia';
 import api from '@/core/api';
+import type { ActiveViolationResponse } from '@/modules/profile/interfaces/active-violation-response.interface';
+import type { ComplaintReasonItem } from '@/modules/profile/interfaces/complaint-reason-item.interface';
+import type { ComplaintResponse } from '@/modules/profile/interfaces/complaint-response.interface';
+import type { GetProfileFollowListQuery } from '@/modules/profile/interfaces/get-profile-follow-list-query.interface';
+import type { PaginatedProfileFollowListResponse } from '@/modules/profile/interfaces/paginated-profile-follow-list-response.interface';
 import { PublicProfile } from '@/modules/profile/interfaces/public-profile.interface';
 import { ProfileState } from '@/modules/profile/interfaces/profile-state.interface';
 
@@ -24,6 +29,17 @@ export const useProfileStore = defineStore('profile', {
             return response.data;
         },
 
+        async getPublicProfileByUsername(username: string): Promise<PublicProfile> {
+            const response = await api.get<PublicProfile>(`/profile/username/${username}`);
+
+            this.profilesById = {
+                ...this.profilesById,
+                [response.data.userId]: response.data,
+            };
+
+            return response.data;
+        },
+
         async followUser(userId: number): Promise<PublicProfile> {
             const response = await api.post<PublicProfile>(`/profile/${userId}/follow`);
 
@@ -42,6 +58,48 @@ export const useProfileStore = defineStore('profile', {
                 ...this.profilesById,
                 [userId]: response.data,
             };
+
+            return response.data;
+        },
+
+        async getProfileFollowers(
+            userId: number | 'me' = 'me',
+            query: GetProfileFollowListQuery = {},
+        ): Promise<PaginatedProfileFollowListResponse> {
+            const profilePath = userId === 'me' ? 'me' : String(userId);
+            const response = await api.get<PaginatedProfileFollowListResponse>(`/profile/${profilePath}/followers`, {
+                params: query,
+            });
+
+            return response.data;
+        },
+
+        async getProfileFollowing(
+            userId: number | 'me' = 'me',
+            query: GetProfileFollowListQuery = {},
+        ): Promise<PaginatedProfileFollowListResponse> {
+            const profilePath = userId === 'me' ? 'me' : String(userId);
+            const response = await api.get<PaginatedProfileFollowListResponse>(`/profile/${profilePath}/following`, {
+                params: query,
+            });
+
+            return response.data;
+        },
+
+        async getOwnViolations(): Promise<ActiveViolationResponse[]> {
+            const response = await api.get<ActiveViolationResponse[]>('/profile/me/violations');
+
+            return response.data;
+        },
+
+        async getComplaintReasons(): Promise<ComplaintReasonItem[]> {
+            const response = await api.get<ComplaintReasonItem[]>('/complaints/reasons');
+
+            return response.data;
+        },
+
+        async submitComplaint(postId: number, complaintReason: string): Promise<ComplaintResponse> {
+            const response = await api.post<ComplaintResponse>(`/complaints/${postId}`, { complaintReason });
 
             return response.data;
         },

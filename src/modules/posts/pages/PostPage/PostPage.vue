@@ -9,6 +9,9 @@ import heartIconUrl from '@/shared/assets/icons/ui/heart.svg';
 import heartActiveIconUrl from '@/shared/assets/icons/ui/heart-active.svg';
 import commentIconUrl from '@/shared/assets/icons/ui/comment.svg';
 import closeIconUrl from '@/shared/assets/icons/ui/close.svg';
+import flagIconUrl from '@/shared/assets/icons/ui/flag.svg';
+import PostComplaintDialog from '@/modules/posts/components/PostComplaintDialog/PostComplaintDialog.vue';
+import { usePostComplaint } from '@/modules/posts/composables/usePostComplaint';
 import playsIconUrl from '@/shared/assets/icons/ui/plays.svg';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
@@ -19,8 +22,10 @@ import { usePostsAppShell } from '@/modules/posts/composables/usePostsAppShell';
 import { CommentSortOrder } from '@/modules/posts/enums/comment-sort-order.enum';
 import { PostStatus } from '@/modules/posts/enums/post-status.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import { PostComment } from '@/modules/posts/interfaces/post-comment.interface';
-import { PostTextSynchronizationItem } from '@/modules/posts/interfaces/post.interface';
+import { Post } from '@/modules/posts/interfaces/post.interface';
+import type { PostTextSynchronizationItem } from '@/modules/posts/interfaces/post-text-synchronization-item.interface';
 import { usePostsStore } from '@/modules/posts/posts.store';
 import { formatPostDuration } from '@/modules/posts/utils/post-formatting.utils';
 import { getAuthorInitial } from '@/modules/posts/utils/post-author.utils';
@@ -29,9 +34,10 @@ import BaseBottomSheet from '@/shared/components/BaseBottomSheet/BaseBottomSheet
 import BaseField from '@/shared/components/BaseField/BaseField.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog.vue';
 import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert.vue';
+import ProfileIdentity from '@/shared/components/ProfileIdentity/ProfileIdentity.vue';
 import { uk } from '@/shared/locales/uk';
 import { formatCompactNumber } from '@/shared/utils/number.utils';
-import { getApiErrorMessage } from '@/shared/utils/api-error.utils';
+import { extractPostId } from '@/shared/utils/post-slug.utils';
 import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import { BaseFieldHandle } from '@/shared/interfaces/base-field-handle.interface';
 import { MOBILE_BREAKPOINT_PX } from '@/shared/constants/breakpoints.constants';
@@ -57,6 +63,18 @@ const {
     openRegister,
     search,
 } = usePostsAppShell();
+
+const {
+    isComplaintDialogOpen,
+    complaintReasons,
+    isLoadingComplaintReasons,
+    isSubmittingComplaint,
+    isComplaintSubmitted,
+    complaintErrorMessage,
+    openComplaintDialog,
+    closeComplaintDialog,
+    submitComplaint,
+} = usePostComplaint();
 
 const isLoadingPost = ref(false);
 const isLoadingComments = ref(false);
@@ -86,18 +104,13 @@ const isMobileViewport = ref(false);
 let activePostRequestId = 0;
 let activeProfileRequestId = 0;
 
-const routePostId = computed<number | null>(() => {
-    const rawPostId = route.params.postId;
-    const normalizedPostId = Array.isArray(rawPostId) ? rawPostId[0] : rawPostId;
-
-    if (!normalizedPostId) {
-        return null;
-    }
-
-    const parsedPostId = Number(normalizedPostId);
-
-    return Number.isInteger(parsedPostId) && parsedPostId > 0 ? parsedPostId : null;
+const routeSlug = computed<string | null>(() => {
+    const raw = route.params.slug;
+    const normalized = Array.isArray(raw) ? raw[0] : raw;
+    return normalized || null;
 });
+
+const routePostId = computed<number | null>(() => routeSlug.value ? extractPostId(routeSlug.value) : null);
 
 const activePost = computed(() => routePostId.value && postsStore.currentPost?.postId === routePostId.value
     ? postsStore.currentPost
@@ -280,22 +293,22 @@ const formatCommentTime = (value?: string): string => {
     const diffMinutes = Math.floor(diffMs / 60_000);
 
     if (diffMinutes < 1) {
-        return 'щойно';
+        return uk.posts.details.timeAgoNow;
     }
 
     if (diffMinutes < 60) {
-        return `${diffMinutes} хв тому`;
+        return uk.posts.details.timeAgoMinutes(diffMinutes);
     }
 
     const diffHours = Math.floor(diffMinutes / 60);
 
     if (diffHours < 24) {
-        return `${diffHours} год тому`;
+        return uk.posts.details.timeAgoHours(diffHours);
     }
 
     const diffDays = Math.floor(diffHours / 24);
 
-    return `${diffDays} дн тому`;
+    return uk.posts.details.timeAgoDays(diffDays);
 };
 
 const canDeleteComment = (comment: PostComment): boolean => {
@@ -312,6 +325,24 @@ const syncPlayerPostState = (): void => {
     if (activePost.value) {
         player.syncActivePost(activePost.value);
     }
+};
+
+const syncLoadedPostLikeState = async (post: Post, requestId: number): Promise<Post> => {
+    if (!authStore.isAuthenticated) {
+        return post;
+    }
+
+    const likeState = await postsStore.fetchPostLikeState(post.postId);
+
+    if (!likeState || requestId !== activePostRequestId) {
+        return post;
+    }
+
+    return {
+        ...post,
+        isLiked: likeState.isLiked,
+        likesCount: likeState.likesCount ?? post.likesCount,
+    };
 };
 
 const syncSpecificPostToPlayer = (postId: number, isLiked: boolean, likesCount?: number): void => {
@@ -341,7 +372,9 @@ const ensureAuthenticated = async (): Promise<boolean> => {
 const loadAuthorProfile = async (userId: number): Promise<void> => {
     const requestId = ++activeProfileRequestId;
 
-    isProfileLoading.value = true;
+    if (!profileStore.getProfileById(userId)) {
+        isProfileLoading.value = true;
+    }
 
     try {
         await profileStore.getPublicProfile(userId);
@@ -350,7 +383,7 @@ const loadAuthorProfile = async (userId: number): Promise<void> => {
             return;
         }
 
-        postErrorMessage.value = getApiErrorMessage(error) || uk.posts.details.profileLoadFailed;
+        postErrorMessage.value = uk.posts.details.profileLoadFailed;
     } finally {
         if (requestId === activeProfileRequestId) {
             isProfileLoading.value = false;
@@ -376,7 +409,7 @@ const loadComments = async (reset = true): Promise<void> => {
             ...(reset ? {} : { cursor: postsStore.commentsNextCursor ?? undefined }),
         });
     } catch (error) {
-        commentsErrorMessage.value = getApiErrorMessage(error) || uk.posts.details.commentsLoadFailed;
+        commentsErrorMessage.value = uk.posts.details.commentsLoadFailed;
     } finally {
         isLoadingComments.value = false;
     }
@@ -409,16 +442,36 @@ const loadPost = async (postId: number): Promise<void> => {
     loadingReplyCommentIds.value = [];
 
     try {
-        const post = await postsStore.fetchPost(postId);
+        const fetchedPost = await postsStore.fetchPost(postId);
+
+        if (requestId !== activePostRequestId) {
+            return;
+        }
+
+        const post = await syncLoadedPostLikeState(fetchedPost, requestId);
 
         if (requestId !== activePostRequestId) {
             return;
         }
 
         postsStore.currentPost = post;
-        updatePostSeoMeta(post, route.path);
+
+        if (routeSlug.value && post.slug !== routeSlug.value) {
+            await router.replace({ name: PostRouteNames.POST, params: { slug: post.slug }, query: route.query, hash: route.hash });
+        }
+
+        if (requestId !== activePostRequestId) {
+            return;
+        }
+
+        updatePostSeoMeta(post, `/posts/${post.slug}`);
         syncPlayerPostState();
         await loadAuthorProfile(post.author.userId);
+
+        if (requestId !== activePostRequestId) {
+            return;
+        }
+
         await loadComments(true);
 
         if (requestId !== activePostRequestId) {
@@ -435,7 +488,7 @@ const loadPost = async (postId: number): Promise<void> => {
             return;
         }
 
-        postErrorMessage.value = getApiErrorMessage(error) || uk.common.errors.serverError;
+        postErrorMessage.value = uk.common.errors.serverError;
     } finally {
         if (requestId === activePostRequestId) {
             isLoadingPost.value = false;
@@ -559,7 +612,7 @@ const toggleAuthorFollow = async (): Promise<void> => {
             previousIsSubscribed,
             previousFollowersCount,
         );
-        postErrorMessage.value = getApiErrorMessage(error) || uk.posts.details.followActionFailed;
+        postErrorMessage.value = uk.posts.details.followActionFailed;
     } finally {
         isFollowPending.value = false;
     }
@@ -636,7 +689,7 @@ const submitComment = async (replyToCommentId?: number): Promise<void> => {
 
         syncPlayerPostState();
     } catch (error) {
-        commentsErrorMessage.value = getApiErrorMessage(error) || uk.common.errors.serverError;
+        commentsErrorMessage.value = uk.common.errors.serverError;
     } finally {
         isSubmittingComment.value = false;
     }
@@ -674,7 +727,7 @@ const toggleReplies = async (comment: PostComment): Promise<void> => {
             limit: REPLIES_PAGE_LIMIT,
         });
     } catch (error) {
-        commentsErrorMessage.value = getApiErrorMessage(error) || uk.posts.details.commentsLoadFailed;
+        commentsErrorMessage.value = uk.posts.details.commentsLoadFailed;
     } finally {
         loadingReplyCommentIds.value = loadingReplyCommentIds.value.filter((id) => id !== comment.commentId);
     }
@@ -693,7 +746,7 @@ const loadMoreReplies = async (commentId: number): Promise<void> => {
             cursor: postsStore.commentRepliesNextCursor[commentId] ?? undefined,
         });
     } catch (error) {
-        commentsErrorMessage.value = getApiErrorMessage(error) || uk.posts.details.commentsLoadFailed;
+        commentsErrorMessage.value = uk.posts.details.commentsLoadFailed;
     } finally {
         loadingReplyCommentIds.value = loadingReplyCommentIds.value.filter((id) => id !== commentId);
     }
@@ -710,7 +763,7 @@ const deleteComment = async (comment: PostComment): Promise<void> => {
         await postsStore.deleteComment(comment.commentId);
         syncPlayerPostState();
     } catch (error) {
-        commentsErrorMessage.value = getApiErrorMessage(error) || uk.common.errors.serverError;
+        commentsErrorMessage.value = uk.common.errors.serverError;
     } finally {
         deletingCommentIds.value = deletingCommentIds.value.filter((commentId) => commentId !== comment.commentId);
     }
@@ -754,7 +807,7 @@ const deletePost = async (): Promise<void> => {
             return;
         }
     } catch (error) {
-        postErrorMessage.value = getApiErrorMessage(error) || uk.common.errors.serverError;
+        postErrorMessage.value = uk.common.errors.serverError;
     } finally {
         isDeletingPost.value = false;
         isDeletePostDialogOpen.value = false;
@@ -795,7 +848,9 @@ const jumpToLine = async (lineIndex: number): Promise<void> => {
     await player.seekToPercent(seekPercent);
 };
 
-watch(routePostId, (postId) => {
+watch(routeSlug, () => {
+    const postId = routePostId.value;
+
     if (!postId) {
         postErrorMessage.value = uk.common.errors.serverError;
         return;
@@ -805,7 +860,7 @@ watch(routePostId, (postId) => {
 }, { immediate: true });
 
 watch(
-    [() => authStore.isInitialized, () => authStore.token, routePostId],
+    [() => authStore.isInitialized, () => authStore.token, routeSlug],
     ([isInitialized, token], [prevIsInitialized, prevToken]) => {
         if (!isInitialized || !routePostId.value || (prevIsInitialized === isInitialized && prevToken === token)) {
             return;
@@ -878,8 +933,42 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
     <div class="post-page">
       <ErrorAlert v-if="postErrorMessage" :message="postErrorMessage" />
 
-      <div v-else-if="isLoadingPost && !activePost" class="post-page__state">
-        {{ uk.common.labels.loading }}
+      <div v-else-if="isLoadingPost && !activePost" class="post-page__skeleton" aria-hidden="true">
+        <div class="post-page__skeleton-layout">
+          <div class="post-page__skeleton-main">
+            <div class="post-page__skeleton-card post-page__skeleton-card--summary">
+              <div class="post-page__skeleton-head">
+                <div class="post-page__skeleton-copy">
+                  <div class="post-page__skeleton-title post-page__sk" />
+                  <div class="post-page__skeleton-title post-page__skeleton-title--short post-page__sk" />
+                  <div class="post-page__skeleton-meta post-page__sk" />
+                  <div class="post-page__skeleton-row">
+                    <div class="post-page__skeleton-btn post-page__sk" />
+                    <div class="post-page__skeleton-btn post-page__sk" />
+                  </div>
+                </div>
+                <div class="post-page__skeleton-aside">
+                  <div class="post-page__skeleton-stats post-page__sk" />
+                  <div class="post-page__skeleton-play post-page__sk" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="post-page__skeleton-text-col">
+            <div class="post-page__skeleton-card">
+              <div class="post-page__skeleton-section-label post-page__sk" />
+              <div class="post-page__skeleton-lines">
+                <div class="post-page__skeleton-line post-page__skeleton-line--90 post-page__sk" />
+                <div class="post-page__skeleton-line post-page__skeleton-line--70 post-page__sk" />
+                <div class="post-page__skeleton-line post-page__skeleton-line--80 post-page__sk" />
+                <div class="post-page__skeleton-line post-page__skeleton-line--65 post-page__sk" />
+                <div class="post-page__skeleton-line post-page__skeleton-line--85 post-page__sk" />
+                <div class="post-page__skeleton-line post-page__skeleton-line--75 post-page__sk" />
+                <div class="post-page__skeleton-line post-page__skeleton-line--60 post-page__sk" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else-if="activePost" class="post-page__layout">
@@ -890,49 +979,48 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                 <h1 class="post-page__title">{{ activePost.title || uk.posts.details.untitled }}</h1>
 
                 <div class="post-page__meta-row">
-                  <span v-if="activePost.originAuthorName" class="post-page__origin-author">
-                    {{ activePost.originAuthorName }}
+                  <span class="post-page__origin-author">
+                    {{ activePost.originAuthorName || uk.posts.details.originalWork }}
                   </span>
+                  <span class="post-page__dot" aria-hidden="true">•</span>
 
-                  <template v-if="activePost.originAuthorName">
-                    <span class="post-page__dot" aria-hidden="true" />
-                  </template>
-
-                  <span class="post-page__author">
-                    <img
-                        v-if="activePost.author.photo"
-                        :src="activePost.author.photo"
-                        :alt="activePost.author.name"
-                        class="post-page__author-photo"
+                  <RouterLink
+                      :to="{ name: ProfileRouteNames.PROFILE_BY_USERNAME, params: { username: activePost.author.username } }"
+                      class="post-page__author"
+                  >
+                    <ProfileIdentity
+                        :name="activePost.author.name"
+                        :username="activePost.author.username"
+                        :photo="activePost.author.photo"
+                        size="sm"
                     />
-                    <span v-else class="post-page__author-fallback">
-                      {{ getAuthorInitial(activePost.author.name) }}
-                    </span>
+                  </RouterLink>
 
-                    <span class="post-page__author-name">{{ activePost.author.name }}</span>
-                  </span>
-
-                  <span class="post-page__dot" aria-hidden="true" />
+                  <span class="post-page__dot" aria-hidden="true">•</span>
 
                   <span class="post-page__duration">{{ formatPostDuration(activePost.audioDurationSeconds) }}</span>
 
                   <template v-if="formattedPublishedDate">
-                    <span class="post-page__dot" aria-hidden="true" />
+                    <span class="post-page__dot" aria-hidden="true">•</span>
                     <span class="post-page__published-date">{{ formattedPublishedDate }}</span>
                   </template>
                 </div>
 
                 <div class="post-page__summary-actions">
-                  <button
-                      v-if="!isOwnPost"
-                      type="button"
-                      class="post-page__action-btn post-page__action-btn--primary"
-                      :class="{ 'post-page__action-btn--secondary': isAuthorSubscribed }"
-                      :disabled="isFollowPending || isProfileLoading"
-                      @click="toggleAuthorFollow"
-                  >
-                    {{ isAuthorSubscribed ? uk.posts.details.unfollow : uk.posts.details.follow }}
-                  </button>
+                  <template v-if="!isOwnPost">
+                    <button
+                        type="button"
+                        class="post-page__action-btn post-page__action-btn--primary"
+                        :class="{
+                          'post-page__action-btn--secondary': isAuthorSubscribed,
+                          'post-page__action-btn--ghost': isProfileLoading,
+                        }"
+                        :disabled="isFollowPending || isProfileLoading"
+                        @click="toggleAuthorFollow"
+                    >
+                      {{ isAuthorSubscribed ? uk.posts.details.following : uk.posts.details.follow }}
+                    </button>
+                  </template>
 
                   <template v-else>
                     <button
@@ -982,6 +1070,17 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                     />
                     <span>{{ formatCompactNumber(activePost.listens) }}</span>
                   </span>
+                  <template v-if="isAuthenticated && !isOwnPost">
+                    <span class="post-page__stat-dot" aria-hidden="true">•</span>
+                    <button
+                        type="button"
+                        class="post-page__report-btn"
+                        :aria-label="uk.posts.details.reportPost"
+                        @click="openComplaintDialog(activePost.postId)"
+                    >
+                      <img :src="flagIconUrl" alt="" class="post-page__report-icon" />
+                    </button>
+                  </template>
                 </div>
 
                 <button
@@ -1004,6 +1103,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                       class="audio-play-button__play-icon"
                   />
                 </button>
+
               </div>
             </div>
 
@@ -1099,42 +1199,32 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                   class="post-page__comment-thread"
               >
                 <div class="post-page__comment">
-                  <div class="post-page__comment-avatar-wrap">
-                    <img
-                        v-if="comment.author.photo"
-                        :src="comment.author.photo"
-                        :alt="comment.author.name"
-                        class="post-page__comment-avatar"
+                  <div class="post-page__comment-head">
+                    <ProfileIdentity
+                        :name="comment.author.name"
+                        :username="comment.author.username"
+                        :photo="comment.author.photo ?? null"
+                        :to="{ name: ProfileRouteNames.PROFILE_BY_USERNAME, params: { username: comment.author.username } }"
+                        size="sm"
                     />
-                    <span v-else class="post-page__comment-avatar post-page__comment-avatar--fallback">
-                      {{ getAuthorInitial(comment.author.name) }}
+                    <span v-if="isLikedByPostAuthor(comment)" class="post-page__comment-author-like">
+                      <img :src="heartActiveIconUrl" alt="" class="post-page__comment-author-like-icon" />
+                      <img
+                          v-if="activePost?.author.photo"
+                          :src="activePost.author.photo"
+                          :alt="activePost.author.name"
+                          class="post-page__comment-author-like-avatar"
+                      />
+                      <span v-else class="post-page__comment-author-like-avatar post-page__comment-author-like-avatar--fallback">
+                        {{ getAuthorInitial(activePost?.author.name ?? '') }}
+                      </span>
+                    </span>
+                    <span v-if="formatCommentTime(comment.createdAt)" class="post-page__comment-time">
+                      · {{ formatCommentTime(comment.createdAt) }}
                     </span>
                   </div>
 
                   <div class="post-page__comment-body">
-                    <div class="post-page__comment-head">
-                      <strong class="post-page__comment-author">{{ comment.author.name }}</strong>
-                      <span v-if="isLikedByPostAuthor(comment)" class="post-page__comment-author-like">
-                        <img
-                            :src="heartActiveIconUrl"
-                            alt=""
-                            class="post-page__comment-author-like-icon"
-                        />
-                        <img
-                            v-if="activePost?.author.photo"
-                            :src="activePost.author.photo"
-                            :alt="activePost.author.name"
-                            class="post-page__comment-author-like-avatar"
-                        />
-                        <span v-else class="post-page__comment-author-like-avatar post-page__comment-author-like-avatar--fallback">
-                          {{ getAuthorInitial(activePost?.author.name ?? '') }}
-                        </span>
-                      </span>
-                      <span v-if="formatCommentTime(comment.createdAt)" class="post-page__comment-time">
-                        • {{ formatCommentTime(comment.createdAt) }}
-                      </span>
-                    </div>
-
                     <p class="post-page__comment-text">{{ comment.commentText }}</p>
 
                     <div class="post-page__comment-actions">
@@ -1145,19 +1235,11 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                           :disabled="isCommentLikePending(comment.commentId)"
                           @click="toggleCommentLike(comment)"
                       >
-                        <img
-                            :src="comment.isLiked ? heartActiveIconUrl : heartIconUrl"
-                            alt=""
-                            class="post-page__comment-action-icon"
-                        />
+                        <img :src="comment.isLiked ? heartActiveIconUrl : heartIconUrl" alt="" class="post-page__comment-action-icon" />
                         <span class="post-page__comment-action-count">{{ formatCompactNumber(comment.likesCount) }}</span>
                       </button>
 
-                      <button
-                          type="button"
-                          class="post-page__comment-action"
-                          @click="toggleReplyForm(comment.commentId)"
-                      >
+                      <button type="button" class="post-page__comment-action" @click="toggleReplyForm(comment.commentId)">
                         {{ uk.posts.details.reply }}
                       </button>
 
@@ -1186,7 +1268,6 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                           :auto-resize-max-height="132"
                           :rows="2"
                       />
-
                       <button
                           type="button"
                           class="post-page__send-btn post-page__send-btn--reply"
@@ -1208,10 +1289,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                         @click="toggleReplies(comment)"
                     >
                       <span>{{ uk.posts.details.showReplies(comment.repliesCount) }}</span>
-                      <span
-                          class="post-page__toggle-replies-arrow"
-                          aria-hidden="true"
-                      />
+                      <span class="post-page__toggle-replies-arrow" aria-hidden="true" />
                     </button>
 
                     <div v-if="isRepliesExpanded(comment.commentId)" class="post-page__replies">
@@ -1224,42 +1302,32 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                           :key="reply.commentId"
                           class="post-page__comment post-page__comment--reply"
                       >
-                        <div class="post-page__comment-avatar-wrap">
-                          <img
-                              v-if="reply.author.photo"
-                              :src="reply.author.photo"
-                              :alt="reply.author.name"
-                              class="post-page__comment-avatar"
+                        <div class="post-page__comment-head">
+                          <ProfileIdentity
+                              :name="reply.author.name"
+                              :username="reply.author.username"
+                              :photo="reply.author.photo ?? null"
+                              :to="{ name: ProfileRouteNames.PROFILE_BY_USERNAME, params: { username: reply.author.username } }"
+                              size="sm"
                           />
-                          <span v-else class="post-page__comment-avatar post-page__comment-avatar--fallback">
-                            {{ getAuthorInitial(reply.author.name) }}
+                          <span v-if="isLikedByPostAuthor(reply)" class="post-page__comment-author-like">
+                            <img :src="heartActiveIconUrl" alt="" class="post-page__comment-author-like-icon" />
+                            <img
+                                v-if="activePost?.author.photo"
+                                :src="activePost.author.photo"
+                                :alt="activePost.author.name"
+                                class="post-page__comment-author-like-avatar"
+                            />
+                            <span v-else class="post-page__comment-author-like-avatar post-page__comment-author-like-avatar--fallback">
+                              {{ getAuthorInitial(activePost?.author.name ?? '') }}
+                            </span>
+                          </span>
+                          <span v-if="formatCommentTime(reply.createdAt)" class="post-page__comment-time">
+                            · {{ formatCommentTime(reply.createdAt) }}
                           </span>
                         </div>
 
                         <div class="post-page__comment-body">
-                          <div class="post-page__comment-head">
-                            <strong class="post-page__comment-author">{{ reply.author.name }}</strong>
-                            <span v-if="isLikedByPostAuthor(reply)" class="post-page__comment-author-like">
-                              <img
-                                  :src="heartActiveIconUrl"
-                                  alt=""
-                                  class="post-page__comment-author-like-icon"
-                              />
-                              <img
-                                  v-if="activePost?.author.photo"
-                                  :src="activePost.author.photo"
-                                  :alt="activePost.author.name"
-                                  class="post-page__comment-author-like-avatar"
-                              />
-                              <span v-else class="post-page__comment-author-like-avatar post-page__comment-author-like-avatar--fallback">
-                                {{ getAuthorInitial(activePost?.author.name ?? '') }}
-                              </span>
-                            </span>
-                            <span v-if="formatCommentTime(reply.createdAt)" class="post-page__comment-time">
-                              • {{ formatCommentTime(reply.createdAt) }}
-                            </span>
-                          </div>
-
                           <p class="post-page__comment-text">{{ reply.commentText }}</p>
 
                           <div class="post-page__comment-actions">
@@ -1270,11 +1338,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                                 :disabled="isCommentLikePending(reply.commentId)"
                                 @click="toggleCommentLike(reply)"
                             >
-                              <img
-                                  :src="reply.isLiked ? heartActiveIconUrl : heartIconUrl"
-                                  alt=""
-                                  class="post-page__comment-action-icon"
-                              />
+                              <img :src="reply.isLiked ? heartActiveIconUrl : heartIconUrl" alt="" class="post-page__comment-action-icon" />
                               <span class="post-page__comment-action-count">{{ formatCompactNumber(reply.likesCount) }}</span>
                             </button>
 
@@ -1309,10 +1373,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                         @click="toggleReplies(comment)"
                     >
                       <span>{{ uk.posts.details.hideReplies }}</span>
-                      <span
-                          class="post-page__toggle-replies-arrow post-page__toggle-replies-arrow--expanded"
-                          aria-hidden="true"
-                      />
+                      <span class="post-page__toggle-replies-arrow post-page__toggle-replies-arrow--expanded" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -1436,5 +1497,16 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
       :duration-limit-minutes="durationLimitMinutes"
       @close="handleModalClose"
       @created="handlePostCreated"
+  />
+
+  <PostComplaintDialog
+      :is-open="isComplaintDialogOpen"
+      :reasons="complaintReasons"
+      :is-loading-reasons="isLoadingComplaintReasons"
+      :is-submitting="isSubmittingComplaint"
+      :is-submitted="isComplaintSubmitted"
+      :error-message="complaintErrorMessage"
+      @close="closeComplaintDialog"
+      @submit="submitComplaint"
   />
 </template>

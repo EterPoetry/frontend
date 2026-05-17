@@ -99,37 +99,9 @@
 
 .sticky-post-player__author-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
     min-width: 0;
-}
-
-.sticky-post-player__author-badge {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    object-fit: cover;
-}
-
-.sticky-post-player__author-badge--fallback {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
-    color: var(--color-primary);
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
-.sticky-post-player__author {
-    min-width: 0;
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-    font-style: italic;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: inherit;
+    text-decoration: none;
 }
 
 .sticky-post-player__transport {

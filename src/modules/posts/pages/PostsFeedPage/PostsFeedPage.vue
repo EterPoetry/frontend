@@ -9,10 +9,9 @@ import { usePostsAppShell } from '@/modules/posts/composables/usePostsAppShell';
 import { useSearchPostsFeed } from '@/modules/posts/composables/useSearchPostsFeed';
 import AppShell from '@/shared/components/AppShell/AppShell.vue';
 import { AppNavigationItem } from '@/shared/constants/app-navigation';
+import { SEARCH_INPUT_DEBOUNCE_MS } from '@/shared/constants/ui.constants';
 import { uk } from '@/shared/locales/uk';
 import './PostsFeedPage.css';
-
-const SEARCH_INPUT_DEBOUNCE_MS = 300;
 
 const {
     authStore,

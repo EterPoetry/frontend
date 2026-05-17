@@ -1,0 +1,187 @@
+.profile-follow-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 400px;
+}
+
+.profile-follow-dialog__search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    min-height: 44px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--color-bg-card) 92%, transparent);
+}
+
+.profile-follow-dialog__search-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.65;
+    flex-shrink: 0;
+}
+
+.profile-follow-dialog__search-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--color-text-main);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.profile-follow-dialog__search-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.profile-follow-dialog__state {
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+}
+
+.profile-follow-dialog__state--error {
+    color: var(--color-primary);
+}
+
+.profile-follow-dialog__skeleton-list,
+.profile-follow-dialog__list,
+.profile-follow-dialog__state {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.profile-follow-dialog__skeleton-list,
+.profile-follow-dialog__list {
+    display: grid;
+    align-content: start;
+}
+
+.profile-follow-dialog__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-top: 1px solid var(--color-border-soft);
+}
+
+.profile-follow-dialog__item--skeleton {
+    pointer-events: none;
+}
+
+.profile-follow-dialog__item:first-child {
+    border-top: none;
+}
+
+.profile-follow-dialog__person {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.profile-follow-dialog__person-copy {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.profile-follow-dialog__self {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+}
+
+.profile-follow-dialog__item .btn {
+    width: auto;
+    min-width: 0;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    min-height: 0;
+}
+
+.profile-follow-dialog__more {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+}
+
+.profile-follow-dialog__more .btn {
+    width: auto;
+    padding: 8px 20px;
+    font-size: 0.88rem;
+    min-height: 0;
+}
+
+.sk {
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        var(--color-bg-card-muted) 25%,
+        var(--color-bg-card-subtle-strong) 50%,
+        var(--color-bg-card-muted) 75%
+    );
+    background-size: 300% 100%;
+    animation: profile-follow-dialog-sweep 1.6s ease-in-out infinite;
+}
+
+.profile-follow-dialog__avatar-skeleton {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.profile-follow-dialog__line {
+    border-radius: 4px;
+}
+
+.profile-follow-dialog__line--name {
+    width: 136px;
+    height: 14px;
+}
+
+.profile-follow-dialog__line--meta {
+    width: 92px;
+    height: 12px;
+}
+
+.profile-follow-dialog__button-skeleton {
+    width: 102px;
+    height: 34px;
+}
+
+@keyframes profile-follow-dialog-sweep {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+@media (max-width: 720px) {
+    .profile-follow-dialog__item {
+        gap: 10px;
+        padding: 12px 0;
+    }
+
+    .profile-follow-dialog__avatar {
+        width: 38px;
+        height: 38px;
+    }
+
+    .profile-follow-dialog__item .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sk {
+        animation: none;
+        opacity: 0.6;
+    }
+}

@@ -9,6 +9,7 @@ import userActiveIconUrl from '@/shared/assets/icons/ui/user-active.svg';
 import plusIconUrl from '@/shared/assets/icons/ui/plus.svg';
 import plusActiveIconUrl from '@/shared/assets/icons/ui/plus-active.svg';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 
 export interface AppNavigationItem {
     key: 'home' | 'subscriptions' | 'favorites' | 'profile' | 'create';
@@ -54,6 +55,10 @@ export const resolveActiveAppNavigationKey = (
 
     if (routeName === PostRouteNames.EDIT_POST) {
         return 'create';
+    }
+
+    if (routeName === ProfileRouteNames.PROFILE_ME) {
+        return 'profile';
     }
 
     return undefined;

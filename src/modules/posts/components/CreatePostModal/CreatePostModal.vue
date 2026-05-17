@@ -7,7 +7,7 @@ import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert.vue';
 import AudioPreviewCard from '@/modules/posts/components/AudioPreviewCard/AudioPreviewCard.vue';
 import { SUPPORTED_AUDIO_ACCEPT } from '@/modules/posts/constants/post-audio.constants';
 import { useCreatePostModal } from '@/modules/posts/composables/useCreatePostModal';
-import { CreatePostModalEmits } from '@/modules/posts/interfaces/create-post-modal-emits.interface';
+import { PostsEvents } from '@/modules/posts/enums/posts-events.enum';
 import { CreatePostModalProps } from '@/modules/posts/interfaces/create-post-modal-props.interface';
 import { uk } from '@/shared/locales/uk';
 import musicIconUrl from '@/shared/assets/icons/ui/music.svg';
@@ -18,7 +18,7 @@ import './CreatePostModal.css';
 
 const props = defineProps<CreatePostModalProps>();
 
-const emit = defineEmits<CreatePostModalEmits>();
+const emit = defineEmits([PostsEvents.CLOSE, PostsEvents.CREATED]);
 
 const {
     activeMode,
@@ -37,6 +37,7 @@ const {
     isDragging,
     isProcessing,
     isRecording,
+    isRequestingMicrophoneAccess,
     isRemoveRecordConfirmOpen,
     isSubmitting,
     openFilePicker,
@@ -113,12 +114,15 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
                 </div>
 
                 <p v-if="isRecording" class="create-post-modal__recording-time">{{ recordingProgressLabel }}</p>
+                <p v-else-if="isRequestingMicrophoneAccess" class="create-post-modal__recording-time">
+                  {{ uk.posts.modal.requestingMicrophone }}
+                </p>
 
                 <BaseButton
                     :label="isRecording ? uk.posts.modal.actions.stopRecording : uk.posts.modal.actions.startRecording"
                     type="button"
                     variant="primary"
-                    :disabled="isSubmitting || isProcessing"
+                    :disabled="isSubmitting || isProcessing || isRequestingMicrophoneAccess"
                     @click="isRecording ? stopRecording() : startRecording()"
                 >
                   <template #icon>

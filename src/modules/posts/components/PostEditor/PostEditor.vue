@@ -248,6 +248,16 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
       <div class="post-editor__divider" />
 
       <div class="post-editor__actions">
+        <button
+            v-if="isDraft"
+            type="button"
+            class="post-editor__delete-draft btn btn-secondary"
+            :disabled="isBusy || props.isDeleteDraftPending"
+            @click="emit('delete-draft')"
+        >
+          <span>{{ uk.posts.editor.deleteDraft }}</span>
+        </button>
+
         <BaseButton
             :label="submitLabel"
             type="button"

@@ -5,6 +5,7 @@ import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import logoUrl from '@/shared/assets/icons/eter-logo.svg';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import { createAppNavigationItems, resolveActiveAppNavigationKey, type AppNavigationItem } from '@/shared/constants/app-navigation';
 import { uk } from '@/shared/locales/uk';
 import './AppSidebar.css';
@@ -54,6 +55,11 @@ const handleNavClick = async (item: AppNavigationItem): Promise<void> => {
 
     if (item.key === 'favorites') {
         await router.push({ name: PostRouteNames.FAVORITES });
+        return;
+    }
+
+    if (item.key === 'profile') {
+        await router.push({ name: ProfileRouteNames.PROFILE_ME });
         return;
     }
 

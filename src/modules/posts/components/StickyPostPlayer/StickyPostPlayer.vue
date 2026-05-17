@@ -6,16 +6,17 @@ import commentIconUrl from '@/shared/assets/icons/ui/comment.svg';
 import heartIconUrl from '@/shared/assets/icons/ui/heart.svg';
 import heartActiveIconUrl from '@/shared/assets/icons/ui/heart-active.svg';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
 import volumeIconUrl from '@/shared/assets/icons/ui/volume.svg';
 import volumeMutedIconUrl from '@/shared/assets/icons/ui/volume-muted.svg';
 import AudioProgressBar from '@/shared/components/AudioProgressBar/AudioProgressBar.vue';
+import ProfileIdentity from '@/shared/components/ProfileIdentity/ProfileIdentity.vue';
 import { usePostPlayer } from '@/modules/posts/composables/usePostPlayer';
 import { StickyPostPlayerProps } from '@/modules/posts/interfaces/sticky-post-player-props.interface';
 import { PostsEvents } from '@/modules/posts/enums/posts-events.enum';
 import { formatPostDuration } from '@/modules/posts/utils/post-formatting.utils';
-import { getAuthorInitial } from '@/modules/posts/utils/post-author.utils';
 import { uk } from '@/shared/locales/uk';
 import { formatCompactNumber } from '@/shared/utils/number.utils';
 import { formatSecondsToClock } from '@/shared/utils/time.utils';
@@ -77,19 +78,23 @@ const handleLikeClick = (): void => {
 };
 
 const handleCommentClick = (): void => {
-    const postId = player.activePost.value?.postId;
+    const post = player.activePost.value;
 
-    if (!postId) {
+    if (!post) {
         return;
     }
 
-    navigateToPostComments(postId);
+    navigateToPostComments(post.slug, post.postId);
 };
 </script>
 
 <template>
   <Transition name="sticky-post-player">
-    <section v-if="player.hasActivePost.value && player.activePost.value" class="sticky-post-player" aria-label="Плеєр поточного поста">
+    <section
+        v-if="player.hasActivePost.value && player.activePost.value"
+        class="sticky-post-player"
+        :aria-label="uk.posts.player.currentPlayerLabel"
+    >
       <div class="sticky-post-player__shell">
         <button
             type="button"
@@ -104,29 +109,24 @@ const handleCommentClick = (): void => {
           <h3 class="sticky-post-player__title">
             <span v-if="player.isPlaying.value" class="sticky-post-player__playing-dot" aria-hidden="true" />
             <RouterLink
-                :to="{ name: PostRouteNames.POST, params: { postId: player.activePost.value.postId } }"
+                :to="{ name: PostRouteNames.POST, params: { slug: player.activePost.value.slug } }"
                 class="sticky-post-player__title-link"
             >
               {{ player.activePost.value.title || uk.posts.player.untitled }}
             </RouterLink>
           </h3>
 
-          <div class="sticky-post-player__author-row">
-            <span
-                v-if="!player.activePost.value.author.photo"
-                class="sticky-post-player__author-badge sticky-post-player__author-badge--fallback"
-            >
-              {{ getAuthorInitial(player.activePost.value.author.name) }}
-            </span>
-            <img
-                v-else
-                :src="player.activePost.value.author.photo"
-                :alt="player.activePost.value.author.name"
-                class="sticky-post-player__author-badge"
+          <RouterLink
+              :to="{ name: ProfileRouteNames.PROFILE_BY_USERNAME, params: { username: player.activePost.value.author.username } }"
+              class="sticky-post-player__author-row"
+          >
+            <ProfileIdentity
+                :name="player.activePost.value.author.name"
+                :username="player.activePost.value.author.username"
+                :photo="player.activePost.value.author.photo"
+                size="sm"
             />
-
-            <span class="sticky-post-player__author">{{ player.activePost.value.author.name }}</span>
-          </div>
+          </RouterLink>
         </div>
 
         <div class="sticky-post-player__transport">

@@ -20,6 +20,8 @@ import { GetPopularPostsQuery } from '@/modules/posts/interfaces/get-popular-pos
 import { GetPopularPostsResponse } from '@/modules/posts/interfaces/get-popular-posts-response.interface';
 import { GetSearchPostsQuery } from '@/modules/posts/interfaces/get-search-posts-query.interface';
 import { GetSearchPostsResponse } from '@/modules/posts/interfaces/get-search-posts-response.interface';
+import { GetUserPostsQuery } from '@/modules/posts/interfaces/get-user-posts-query.interface';
+import { GetUserPostsResponse } from '@/modules/posts/interfaces/get-user-posts-response.interface';
 import { DeletePostResponse } from '@/modules/posts/interfaces/delete-post-response.interface';
 import { PostCategory } from '@/modules/posts/interfaces/post-category.interface';
 import { PostComment } from '@/modules/posts/interfaces/post-comment.interface';
@@ -270,6 +272,39 @@ export const usePostsStore = defineStore('posts', {
             return {
                 ...response.data,
                 items: this.searchFeedPosts,
+            };
+        },
+
+        async getProfilePosts(userId: number, query: GetUserPostsQuery = {}): Promise<GetUserPostsResponse> {
+            const response = await api.get<GetUserPostsResponse>(`/profile/${userId}/posts`, {
+                params: query,
+            });
+
+            return {
+                ...response.data,
+                items: response.data.items.map(applyRememberedPostLikeState),
+            };
+        },
+
+        async getProfilePostsByUsername(username: string, query: GetUserPostsQuery = {}): Promise<GetUserPostsResponse> {
+            const response = await api.get<GetUserPostsResponse>(`/profile/username/${username}/posts`, {
+                params: query,
+            });
+
+            return {
+                ...response.data,
+                items: response.data.items.map(applyRememberedPostLikeState),
+            };
+        },
+
+        async getMyPosts(query: GetUserPostsQuery = {}): Promise<GetUserPostsResponse> {
+            const response = await api.get<GetUserPostsResponse>('/posts/me', {
+                params: query,
+            });
+
+            return {
+                ...response.data,
+                items: response.data.items.map(applyRememberedPostLikeState),
             };
         },
 

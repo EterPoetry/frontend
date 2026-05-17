@@ -1,0 +1,4 @@
+export const FOLLOW_LIST_PAGE_LIMIT = 20;
+export const PROFILE_POSTS_PAGE_LIMIT = 20;
+export const MAX_PROFILE_AVATAR_BYTES = 5 * 1024 * 1024;
+export const PROFILE_LINK_MAX_LENGTH = 2048;

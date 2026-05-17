@@ -14,7 +14,6 @@ import {
     MAX_AUDIO_FILE_SIZE_BYTES,
     SUPPORTED_AUDIO_EXTENSIONS,
 } from '@/modules/posts/constants/post-audio.constants';
-import { getApiErrorMessage } from '@/shared/utils/api-error.utils';
 import { uk } from '@/shared/locales/uk';
 
 export const usePostEditor = (
@@ -211,7 +210,7 @@ export const usePostEditor = (
             emit(PostsEvents.UPDATED, nextPost);
         } catch (error) {
             isUploadingAudio.value = false;
-            errorMessage.value = getApiErrorMessage(error) || uk.posts.editor.errors.audioReplaceFailed;
+            errorMessage.value = uk.posts.editor.errors.audioReplaceFailed;
         } finally {
             isReplacingAudio.value = false;
             isUploadingAudio.value = false;
@@ -252,7 +251,7 @@ export const usePostEditor = (
 
             emit(PostsEvents.UPDATED, nextPost);
         } catch (error) {
-            errorMessage.value = getApiErrorMessage(error) || uk.posts.editor.errors.publishFailed;
+            errorMessage.value = uk.posts.editor.errors.publishFailed;
         } finally {
             isSubmitting.value = false;
         }

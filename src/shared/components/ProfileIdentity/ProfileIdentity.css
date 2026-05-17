@@ -1,0 +1,136 @@
+.profile-identity {
+    --profile-identity-avatar-size: 40px;
+    --profile-identity-gap: 12px;
+    --profile-identity-name-size: 1rem;
+    --profile-identity-username-size: 0.84rem;
+    --profile-identity-fallback-size: 0.92rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--profile-identity-gap);
+    align-items: center;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+}
+
+.profile-identity--align-start {
+    align-items: start;
+}
+
+.profile-identity__avatar {
+    width: var(--profile-identity-avatar-size);
+    height: var(--profile-identity-avatar-size);
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.profile-identity__avatar--fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface-accent-strong);
+    color: var(--color-primary);
+    font-size: var(--profile-identity-fallback-size);
+    font-weight: 700;
+}
+
+.profile-identity__copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.profile-identity__name-row {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-identity__name,
+.profile-identity__username {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-identity__name {
+    color: var(--color-text-strong);
+    font-size: var(--profile-identity-name-size);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.profile-identity__username {
+    color: var(--color-text-muted);
+    font-size: var(--profile-identity-username-size);
+    line-height: 1.25;
+}
+
+.profile-identity__badge {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--color-surface-accent);
+    color: var(--color-primary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.profile-identity--link:hover .profile-identity__name,
+.profile-identity--link:hover .profile-identity__username {
+    color: var(--color-primary);
+}
+
+.profile-identity--xs {
+    --profile-identity-avatar-size: 22px;
+    --profile-identity-gap: 8px;
+    --profile-identity-name-size: 0.82rem;
+    --profile-identity-username-size: 0.74rem;
+    --profile-identity-fallback-size: 0.68rem;
+}
+
+.profile-identity--sm {
+    --profile-identity-avatar-size: 24px;
+    --profile-identity-gap: 8px;
+    --profile-identity-name-size: 0.9rem;
+    --profile-identity-username-size: 0.78rem;
+    --profile-identity-fallback-size: 0.72rem;
+}
+
+.profile-identity--md {
+    --profile-identity-avatar-size: 40px;
+    --profile-identity-gap: 12px;
+    --profile-identity-name-size: 1rem;
+    --profile-identity-username-size: 0.84rem;
+    --profile-identity-fallback-size: 0.92rem;
+}
+
+.profile-identity--lg {
+    --profile-identity-avatar-size: 42px;
+    --profile-identity-gap: 12px;
+    --profile-identity-name-size: 0.95rem;
+    --profile-identity-username-size: 0.82rem;
+    --profile-identity-fallback-size: 0.9rem;
+}
+
+.profile-identity--hero {
+    --profile-identity-avatar-size: 80px;
+    --profile-identity-gap: 18px;
+    --profile-identity-name-size: 1.5rem;
+    --profile-identity-username-size: 0.88rem;
+    --profile-identity-fallback-size: 1.8rem;
+}
+
+@media (max-width: 720px) {
+    .profile-identity--hero {
+        --profile-identity-avatar-size: 72px;
+        --profile-identity-gap: 14px;
+        --profile-identity-name-size: 1.3rem;
+        --profile-identity-fallback-size: 1.5rem;
+    }
+}
