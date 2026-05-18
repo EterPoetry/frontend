@@ -30,6 +30,8 @@ const {
     fileInput,
     formattedLimit,
     handleCloseClick,
+    handleDragLeave,
+    handleDragOver,
     handleDrop,
     handleNativeFileSelection,
     handleRemoveSelection,
@@ -99,8 +101,8 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
           <div
               class="create-post-modal__panel"
               :class="{ 'create-post-modal__panel--dragging': isDragging }"
-              @dragover.prevent="isDragging = true"
-              @dragleave.prevent="isDragging = false"
+              @dragover="handleDragOver"
+              @dragleave="handleDragLeave"
               @drop="handleDrop"
           >
             <template v-if="!hasSelection">

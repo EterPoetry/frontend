@@ -56,6 +56,7 @@ const formatPostDate = (value: string): string => new Intl.DateTimeFormat('uk-UA
           :key="post.postId"
           :to="{ name: PostRouteNames.EDIT_POST, params: { postId: post.postId } }"
           class="profile-draft-posts__card"
+          :class="{ 'profile-draft-posts__card--processing': post.status === PostStatus.PROCESSING }"
       >
         <div class="profile-draft-posts__main">
           <span class="profile-draft-posts__title">
@@ -73,7 +74,15 @@ const formatPostDate = (value: string): string => new Intl.DateTimeFormat('uk-UA
               <span class="profile-draft-posts__duration">{{ formatPostDuration(post.audioDurationSeconds) }}</span>
             </template>
             <span class="profile-draft-posts__dot" aria-hidden="true">•</span>
-            <span>
+            <span
+                class="profile-draft-posts__status"
+                :class="{ 'profile-draft-posts__status--processing': post.status === PostStatus.PROCESSING }"
+            >
+              <span
+                  v-if="post.status === PostStatus.PROCESSING"
+                  class="profile-draft-posts__status-indicator"
+                  aria-hidden="true"
+              />
               {{ post.status === PostStatus.PROCESSING ? uk.profile.posts.processing : uk.profile.sections.drafts }}
             </span>
           </div>

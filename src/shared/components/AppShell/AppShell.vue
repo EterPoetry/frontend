@@ -9,10 +9,11 @@ import AppSidebar from '@/shared/components/AppSidebar/AppSidebar.vue';
 import type { AppNavigationItem } from '@/shared/constants/app-navigation';
 import './AppShell.css';
 
-defineProps<{
+const props = defineProps<{
     isAuthenticated: boolean;
     activeNavKey?: AppNavigationItem['key'];
     likePendingPostIds?: number[];
+    hideStickyPlayer?: boolean;
 }>();
 
 const search = defineModel<string>('search', { default: '' });
@@ -20,7 +21,7 @@ const sortBy = defineModel<string>('sortBy', { default: 'newest' });
 const categoryId = defineModel<number | null>('categoryId', { default: null });
 const route = useRoute();
 const player = usePostPlayer();
-const hasPlayer = computed(() => player.hasActivePost.value);
+const shouldShowStickyPlayer = computed(() => player.hasActivePost.value && !props.hideStickyPlayer);
 const hasCompactHeader = computed(() => route.meta.searchEnabled !== true);
 
 defineEmits<{
@@ -36,7 +37,7 @@ defineEmits<{
   <div
       class="app-shell"
       :class="{
-        'app-shell--with-player': hasPlayer,
+        'app-shell--with-player': shouldShowStickyPlayer,
         'app-shell--compact-header': hasCompactHeader,
       }"
   >
@@ -63,6 +64,7 @@ defineEmits<{
     />
 
     <StickyPostPlayer
+        v-if="shouldShowStickyPlayer"
         :like-pending-post-ids="likePendingPostIds"
         @like-toggle="$emit('like-toggle', $event)"
     />

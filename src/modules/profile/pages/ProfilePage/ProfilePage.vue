@@ -143,6 +143,8 @@ const {
   loadPublishedPosts,
   ensureDraftPostsVisible,
   loadMoreDraftPosts,
+  startDraftPostsPolling,
+  stopDraftPostsPolling,
   handlePublishedActivate,
   setPublishedSort,
   setPublishedAuthorType,
@@ -359,15 +361,25 @@ watch([routeUserId, routeUsername, requestedTab], () => {
   activeTab.value = requestedTab.value;
   void loadProfile().then(() => {
     if (activeTab.value === 'drafts') {
-      void ensureDraftPostsVisible();
+      void ensureDraftPostsVisible().then(() => {
+        startDraftPostsPolling();
+      });
+      return;
     }
+
+    stopDraftPostsPolling();
   });
 }, {immediate: true});
 
 watch(activeTab, (tab) => {
   if (tab === 'drafts') {
-    void ensureDraftPostsVisible();
+    void ensureDraftPostsVisible().then(() => {
+      startDraftPostsPolling();
+    });
+    return;
   }
+
+  stopDraftPostsPolling();
 });
 </script>
 

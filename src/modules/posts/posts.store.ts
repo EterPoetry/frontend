@@ -324,18 +324,6 @@ export const usePostsStore = defineStore('posts', {
             return response.data;
         },
 
-        async fetchPostLikeState(postId: number): Promise<{ isLiked: boolean; likesCount?: number } | null> {
-            try {
-                const response = await api.get<{ isLiked: boolean; likesCount?: number }>(`/posts/${postId}/like`);
-
-                rememberPostLikeState(postId, response.data.isLiked);
-
-                return response.data;
-            } catch (_error) {
-                return null;
-            }
-        },
-
         async createComment(postId: number, payload: CreateCommentPayload): Promise<PostComment> {
             const response = await api.post<PostComment>(`/posts/${postId}/comments`, payload);
             const nextComment = response.data;
@@ -468,7 +456,12 @@ export const usePostsStore = defineStore('posts', {
         ): Promise<Post> {
             const response = await api.patch<Post>(`/posts/${postId}/text-synchronization`, payload);
 
-            this.currentPost = response.data;
+            this.currentPost = this.currentPost?.postId === postId
+                ? {
+                    ...this.currentPost,
+                    ...response.data,
+                }
+                : response.data;
 
             return this.currentPost;
         },

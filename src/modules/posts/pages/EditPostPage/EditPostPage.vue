@@ -53,13 +53,7 @@ const activePost = computed(() => {
         ? postsStore.currentPost
         : null;
 });
-const activeNavKey = computed<AppNavigationItem['key']>(() => {
-    if (activePost.value?.status === PostStatus.DRAFT) {
-        return 'create';
-    }
-
-    return 'home';
-});
+const activeNavKey = computed<AppNavigationItem['key']>(() => 'create');
 
 let activePostRequestId = 0;
 const isDeleteDraftDialogOpen = ref(false);

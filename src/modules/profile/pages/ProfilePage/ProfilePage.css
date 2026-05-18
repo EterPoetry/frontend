@@ -57,7 +57,7 @@
     }
 }
 
-:root[data-theme='dark'] .profile-page__card {
+:root[data-theme='dark'] .profile-page-hero__card {
     background: var(--color-bg-card-strong);
     border-color: var(--color-border);
     box-shadow:
@@ -65,7 +65,7 @@
         0 0 0 1px color-mix(in srgb, var(--color-border) 60%, var(--color-primary) 8%);
 }
 
-:root[data-theme='dark'] .profile-page__button-icon {
+:root[data-theme='dark'] .profile-page-hero__button-icon {
     filter: brightness(0) saturate(100%) invert(84%) sepia(10%) saturate(286%) hue-rotate(343deg) brightness(93%) contrast(92%);
 }
 

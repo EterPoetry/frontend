@@ -9,9 +9,8 @@ import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
-import volumeIconUrl from '@/shared/assets/icons/ui/volume.svg';
-import volumeMutedIconUrl from '@/shared/assets/icons/ui/volume-muted.svg';
-import AudioProgressBar from '@/shared/components/AudioProgressBar/AudioProgressBar.vue';
+import PostAudioWaveform from '@/modules/posts/components/PostAudioWaveform/PostAudioWaveform.vue';
+import PlayerVolumeControl from '@/modules/posts/components/PlayerVolumeControl/PlayerVolumeControl.vue';
 import ProfileIdentity from '@/shared/components/ProfileIdentity/ProfileIdentity.vue';
 import { usePostPlayer } from '@/modules/posts/composables/usePostPlayer';
 import { StickyPostPlayerProps } from '@/modules/posts/interfaces/sticky-post-player-props.interface';
@@ -33,9 +32,6 @@ const player = usePostPlayer();
 
 const formattedCurrentTime = computed(() => formatSecondsToClock(player.currentTimeSeconds.value));
 const formattedDuration = computed(() => formatPostDuration(Math.round(player.durationSeconds.value)));
-const volumePercent = computed(() => `${Math.round(player.volume.value * 100)}%`);
-const isMuted = computed(() => player.isMuted.value || player.volume.value === 0);
-const volumeIcon = computed(() => isMuted.value ? volumeMutedIconUrl : volumeIconUrl);
 const seekPercent = computed({
     get: () => player.progressPercent.value,
     set: (value: number) => {
@@ -55,16 +51,6 @@ const handleTogglePlayback = (): void => {
 
 const handleClose = (): void => {
     void player.closePlayer();
-};
-
-const handleVolumeInput = (event: Event): void => {
-    const target = event.target as HTMLInputElement | null;
-
-    if (!target) {
-        return;
-    }
-
-    player.setVolume(Number(target.value) / 100);
 };
 
 const handleLikeClick = (): void => {
@@ -144,10 +130,13 @@ const handleCommentClick = (): void => {
           <div class="sticky-post-player__timeline">
             <span class="sticky-post-player__time">{{ formattedCurrentTime }}</span>
 
-            <AudioProgressBar
+            <PostAudioWaveform
                 v-model="seekPercent"
+                :audio-analysis="player.activePost.value?.audioAnalysis"
+                :audio-energy="player.audioEnergy.value"
+                :duration-seconds="player.durationSeconds.value"
+                :is-playing="player.isPlaying.value"
                 :ariaLabel="uk.posts.player.seek"
-                density="compact"
             />
 
             <span class="sticky-post-player__time">{{ formattedDuration }}</span>
@@ -188,25 +177,11 @@ const handleCommentClick = (): void => {
           </div>
 
           <div class="sticky-post-player__volume-group">
-            <button
-                type="button"
-                class="sticky-post-player__mute"
-                :aria-label="player.isMuted.value ? uk.posts.player.unmute : uk.posts.player.mute"
-                @click="player.toggleMute"
-            >
-              <img :src="volumeIcon" alt="" aria-hidden="true" class="sticky-post-player__mute-icon" :class="{ 'sticky-post-player__mute-icon--muted': isMuted }" />
-            </button>
-
-            <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                class="sticky-post-player__volume"
-                :value="Math.round(player.volume.value * 100)"
-                :style="{ '--player-volume': volumePercent }"
-                :aria-label="uk.posts.player.volume"
-                @input="handleVolumeInput"
+            <PlayerVolumeControl
+                :volume="player.volume.value"
+                :is-muted="player.isMuted.value"
+                @set-volume="player.setVolume"
+                @toggle-mute="player.toggleMute"
             />
           </div>
         </div>

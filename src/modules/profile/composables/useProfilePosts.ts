@@ -1,4 +1,4 @@
-import {computed, ref, type ComputedRef, type Ref} from 'vue';
+import {computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref} from 'vue';
 import {PostStatus} from '@/modules/posts/enums/post-status.enum';
 import type {Post} from '@/modules/posts/interfaces/post.interface';
 import type {
@@ -6,7 +6,11 @@ import type {
     UserPostsSortBy,
     UserPostsSortOrder,
 } from '@/modules/posts/interfaces/get-user-posts-query.interface';
-import {PROFILE_POSTS_PAGE_LIMIT} from '@/modules/profile/constants/profile.constants';
+import {
+    PROFILE_DRAFTS_POLL_INITIAL_INTERVAL_MS,
+    PROFILE_DRAFTS_POLL_MAX_INTERVAL_MS,
+    PROFILE_POSTS_PAGE_LIMIT,
+} from '@/modules/profile/constants/profile.constants';
 import type {ProfileResponse} from '@/modules/profile/interfaces/profile-response.interface';
 import type {PublicProfile} from '@/modules/profile/interfaces/public-profile.interface';
 import {useAuthStore} from '@/modules/auth/auth.store';
@@ -51,6 +55,8 @@ interface UseProfilePostsResult {
     loadPublishedPosts: (append?: boolean, userIdOverride?: number, usernameOverride?: string) => Promise<void>;
     ensureDraftPostsVisible: () => Promise<void>;
     loadMoreDraftPosts: () => Promise<void>;
+    startDraftPostsPolling: () => void;
+    stopDraftPostsPolling: () => void;
     handlePublishedActivate: (postId: number) => Promise<void>;
     setPublishedSort: (sortBy: UserPostsSortBy) => void;
     setPublishedAuthorType: (type: UserPostsAuthorType | null) => void;
@@ -78,25 +84,20 @@ export const useProfilePosts = ({
     const isDraftsLoading = ref(false);
     const isDraftsLoadingMore = ref(false);
     const draftsErrorMessage = ref('');
+    const isDraftPostsPollingActive = ref(false);
 
     const canLoadMorePublished = computed(() => publishedPosts.value.length < publishedTotal.value);
     const draftPosts = computed(() => ownPosts.value.filter((post) => post.status === PostStatus.DRAFT));
     const canLoadMoreDrafts = computed(() => ownPosts.value.length < ownPostsTotal.value);
     const activePublishedPostId = computed(() => player.activePostId.value);
+    const hasProcessingDraftPosts = computed(() => ownPosts.value.some((post) => post.status === PostStatus.PROCESSING));
+    let draftPostsPollTimeoutId: number | null = null;
+    let nextDraftPostsPollIntervalMs = PROFILE_DRAFTS_POLL_INITIAL_INTERVAL_MS;
 
     const resetPublishedSortFilter = (): void => {
         publishedSortBy.value = 'createdAt';
         publishedSortOrder.value = 'desc';
         publishedAuthorType.value = null;
-    };
-
-    const resetProfilePostsState = (): void => {
-        publishedPosts.value = [];
-        publishedTotal.value = 0;
-        publishedErrorMessage.value = '';
-        ownPosts.value = [];
-        ownPostsTotal.value = 0;
-        draftsErrorMessage.value = '';
     };
 
     const loadPublishedPosts = async (
@@ -158,6 +159,7 @@ export const useProfilePosts = ({
 
         try {
             const response = await postsStore.getMyPosts({
+                status: `${PostStatus.DRAFT},${PostStatus.PROCESSING}`,
                 sortBy: 'updatedAt',
                 sortOrder: 'desc',
                 offset: append ? ownPosts.value.length : 0,
@@ -176,6 +178,100 @@ export const useProfilePosts = ({
         }
     };
 
+    const clearDraftPostsPollingTimer = (): void => {
+        if (draftPostsPollTimeoutId !== null) {
+            window.clearTimeout(draftPostsPollTimeoutId);
+            draftPostsPollTimeoutId = null;
+        }
+    };
+
+    const mergeDraftPostsPage = (items: Post[], total: number): void => {
+        const firstPagePostIds = new Set(items.map((post) => post.postId));
+        const remainingPosts = ownPosts.value.filter((post) => !firstPagePostIds.has(post.postId));
+
+        ownPosts.value = [...items, ...remainingPosts];
+        ownPostsTotal.value = total;
+    };
+
+    const pollDraftPosts = async (): Promise<void> => {
+        clearDraftPostsPollingTimer();
+
+        if (
+            !isDraftPostsPollingActive.value
+            || !isOwnProfile.value
+            || !authStore.isAuthenticated
+            || !hasProcessingDraftPosts.value
+        ) {
+            return;
+        }
+
+        if (document.visibilityState !== 'visible') {
+            draftPostsPollTimeoutId = window.setTimeout(pollDraftPosts, nextDraftPostsPollIntervalMs);
+            nextDraftPostsPollIntervalMs = Math.min(
+                nextDraftPostsPollIntervalMs * 2,
+                PROFILE_DRAFTS_POLL_MAX_INTERVAL_MS,
+            );
+            return;
+        }
+
+        try {
+            const response = await postsStore.getMyPosts({
+                status: `${PostStatus.DRAFT},${PostStatus.PROCESSING}`,
+                sortBy: 'updatedAt',
+                sortOrder: 'desc',
+                offset: 0,
+                limit: PROFILE_POSTS_PAGE_LIMIT,
+            });
+
+            mergeDraftPostsPage(response.items, response.total);
+            draftsErrorMessage.value = '';
+        } catch (_error) {
+            if (!draftPosts.value.length) {
+                draftsErrorMessage.value = uk.profile.posts.draftsLoadFailed;
+            }
+        } finally {
+            if (!isDraftPostsPollingActive.value || !hasProcessingDraftPosts.value) {
+                clearDraftPostsPollingTimer();
+                return;
+            }
+
+            draftPostsPollTimeoutId = window.setTimeout(pollDraftPosts, nextDraftPostsPollIntervalMs);
+            nextDraftPostsPollIntervalMs = Math.min(
+                nextDraftPostsPollIntervalMs * 2,
+                PROFILE_DRAFTS_POLL_MAX_INTERVAL_MS,
+            );
+        }
+    };
+
+    const startDraftPostsPolling = (): void => {
+        if (isDraftPostsPollingActive.value) {
+            return;
+        }
+
+        isDraftPostsPollingActive.value = true;
+        nextDraftPostsPollIntervalMs = PROFILE_DRAFTS_POLL_INITIAL_INTERVAL_MS;
+
+        if (hasProcessingDraftPosts.value) {
+            draftPostsPollTimeoutId = window.setTimeout(pollDraftPosts, nextDraftPostsPollIntervalMs);
+        }
+    };
+
+    const stopDraftPostsPolling = (): void => {
+        isDraftPostsPollingActive.value = false;
+        nextDraftPostsPollIntervalMs = PROFILE_DRAFTS_POLL_INITIAL_INTERVAL_MS;
+        clearDraftPostsPollingTimer();
+    };
+
+    const resetProfilePostsState = (): void => {
+        stopDraftPostsPolling();
+        publishedPosts.value = [];
+        publishedTotal.value = 0;
+        publishedErrorMessage.value = '';
+        ownPosts.value = [];
+        ownPostsTotal.value = 0;
+        draftsErrorMessage.value = '';
+    };
+
     const ensureDraftPostsVisible = async (): Promise<void> => {
         if (!isOwnProfile.value || isDraftsLoading.value || isDraftsLoadingMore.value) {
             return;
@@ -184,23 +280,15 @@ export const useProfilePosts = ({
         if (!ownPosts.value.length) {
             await loadOwnPostsPage(false);
         }
-
-        while (!draftPosts.value.length && ownPosts.value.length < ownPostsTotal.value) {
-            await loadOwnPostsPage(true);
-        }
     };
 
     const loadMoreDraftPosts = async (): Promise<void> => {
-        const previousDraftsCount = draftPosts.value.length;
-
         if (!ownPosts.value.length) {
             await ensureDraftPostsVisible();
             return;
         }
 
-        while (draftPosts.value.length === previousDraftsCount && ownPosts.value.length < ownPostsTotal.value) {
-            await loadOwnPostsPage(true);
-        }
+        await loadOwnPostsPage(true);
     };
 
     const handlePublishedActivate = async (postId: number): Promise<void> => {
@@ -233,6 +321,27 @@ export const useProfilePosts = ({
         void loadPublishedPosts(false);
     };
 
+    watch([isDraftPostsPollingActive, hasProcessingDraftPosts], ([isPollingActive, hasProcessing]) => {
+        if (!isPollingActive) {
+            clearDraftPostsPollingTimer();
+            return;
+        }
+
+        if (!hasProcessing) {
+            stopDraftPostsPolling();
+            return;
+        }
+
+        if (draftPostsPollTimeoutId === null) {
+            nextDraftPostsPollIntervalMs = PROFILE_DRAFTS_POLL_INITIAL_INTERVAL_MS;
+            draftPostsPollTimeoutId = window.setTimeout(pollDraftPosts, nextDraftPostsPollIntervalMs);
+        }
+    });
+
+    onBeforeUnmount(() => {
+        stopDraftPostsPolling();
+    });
+
     return {
         publishedSortBy,
         publishedSortOrder,
@@ -256,6 +365,8 @@ export const useProfilePosts = ({
         loadPublishedPosts,
         ensureDraftPostsVisible,
         loadMoreDraftPosts,
+        startDraftPostsPolling,
+        stopDraftPostsPolling,
         handlePublishedActivate,
         setPublishedSort,
         setPublishedAuthorType,

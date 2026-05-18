@@ -22,7 +22,7 @@
     max-width: calc(100vw - 64px - 64px);
     justify-content: flex-end;
     gap: 0;
-    padding: 14px 16px;
+    padding: 14px 35px;
     background: var(--color-bg-card-strong);
     border: 1px solid var(--color-border-soft);
     border-radius: 999px;

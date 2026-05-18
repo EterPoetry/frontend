@@ -1,0 +1,162 @@
+.player-volume-control {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-volume-control__mute {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-ui);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.15s;
+    padding: 0;
+}
+
+.player-volume-control__mute:hover {
+    color: var(--color-primary);
+}
+
+.player-volume-control__icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    opacity: 0.85;
+    transition: opacity 0.15s, filter 0.15s;
+}
+
+.player-volume-control__mute:hover .player-volume-control__icon {
+    opacity: 1;
+    filter: brightness(0) saturate(100%) invert(36%) sepia(19%) saturate(1245%) hue-rotate(336deg) brightness(98%) contrast(91%);
+}
+
+.player-volume-control__icon--muted {
+    opacity: 0.5;
+}
+
+/*
+ * Popup: sits above the button. padding-bottom bridges the gap so
+ * the hover zone is continuous when moving mouse from button to popup.
+ */
+.player-volume-control__popup {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) scaleY(0.9);
+    transform-origin: bottom center;
+    padding-bottom: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 20;
+}
+
+.player-volume-control:hover .player-volume-control__popup {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) scaleY(1);
+}
+
+.player-volume-control__popup-box {
+    border: 1px solid var(--color-border-soft);
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    box-shadow:
+        0 8px 24px color-mix(in srgb, var(--color-shadow-soft) 30%, transparent),
+        0 2px 8px color-mix(in srgb, var(--color-shadow-soft) 16%, transparent);
+    padding: 12px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Defines the visual height of the slider area */
+.player-volume-control__popup-track {
+    width: 36px;
+    height: 96px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+/*
+ * Rotated -90deg: left→bottom, right→top.
+ * Gradient reversed so high value = top (filled), low = bottom (empty).
+ * --pvc-fill = e.g. "75%", so calc(100% - fill) = empty zone at bottom.
+ */
+.player-volume-control__slider {
+    width: 88px;
+    height: 4px;
+    border-radius: 999px;
+    appearance: none;
+    outline: none;
+    cursor: pointer;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    transform: rotate(-90deg);
+    background:
+        linear-gradient(90deg,
+            var(--color-primary) 0,
+            var(--color-primary) var(--pvc-fill),
+            color-mix(in srgb, var(--color-border) 55%, transparent) var(--pvc-fill),
+            color-mix(in srgb, var(--color-border) 55%, transparent) 100%
+        );
+}
+
+.player-volume-control__slider::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    appearance: none;
+    background: var(--color-primary);
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent),
+        0 1px 4px color-mix(in srgb, var(--color-shadow-soft) 40%, transparent);
+    transition: transform 0.12s;
+    cursor: grab;
+}
+
+.player-volume-control__slider:active::-webkit-slider-thumb {
+    cursor: grabbing;
+    transform: scale(1.15);
+}
+
+.player-volume-control__slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-primary);
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent),
+        0 1px 4px color-mix(in srgb, var(--color-shadow-soft) 40%, transparent);
+    cursor: grab;
+}
+
+:root[data-theme='dark'] .player-volume-control__popup-box {
+    background: color-mix(in srgb, var(--color-bg-card-strong) 97%, #fff 3%);
+    border-color: color-mix(in srgb, var(--color-border-soft) 70%, transparent);
+}
+
+:root[data-theme='dark'] .player-volume-control__slider {
+    background:
+        linear-gradient(90deg,
+            var(--color-primary) 0,
+            var(--color-primary) var(--pvc-fill),
+            color-mix(in srgb, var(--color-border) 40%, transparent) var(--pvc-fill),
+            color-mix(in srgb, var(--color-border) 40%, transparent) 100%
+        );
+}

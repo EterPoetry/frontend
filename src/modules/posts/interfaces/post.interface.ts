@@ -1,6 +1,7 @@
 import { PostStatus } from '@/modules/posts/enums/post-status.enum';
-import type { PostCategory } from '@/modules/posts/interfaces/post-category.interface';
+import type { PostAudioAnalysis } from '@/modules/posts/interfaces/post-audio-analysis.interface';
 import type { PostAuthor } from '@/modules/posts/interfaces/post-author.interface';
+import type { PostCategory } from '@/modules/posts/interfaces/post-category.interface';
 import type { PostTextSynchronizationItem } from '@/modules/posts/interfaces/post-text-synchronization-item.interface';
 
 export interface Post {
@@ -24,4 +25,5 @@ export interface Post {
     author: PostAuthor;
     createdAt: string;
     updatedAt: string;
+    audioAnalysis?: PostAudioAnalysis | null;
 }

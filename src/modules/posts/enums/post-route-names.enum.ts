@@ -4,4 +4,5 @@ export enum PostRouteNames {
     FAVORITES = 'favorites',
     POST = 'post',
     EDIT_POST = 'edit-post',
+    SYNC_POST = 'sync-post',
 }

@@ -11,6 +11,7 @@
     border: 1px solid color-mix(in srgb, var(--color-border-soft) 185%, var(--color-primary) 10%);
     border-radius: 10px;
     background: color-mix(in srgb, var(--color-bg-card-strong) 96%, #fff 4%);
+    color: var(--color-text-main);
     box-shadow:
         0 10px 24px color-mix(in srgb, var(--color-shadow-soft) 42%, transparent),
         0 0 0 1px color-mix(in srgb, var(--color-bg-card-strong) 22%, var(--color-primary) 6%);
@@ -96,6 +97,10 @@
     border: none;
     padding: 0;
     text-align: left;
+}
+
+.profile-page-hero__stat span {
+    color: inherit;
 }
 
 .profile-page-hero__stat strong {

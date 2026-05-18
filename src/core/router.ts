@@ -1,10 +1,10 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
-import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
+import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
-import { uk } from "@/shared/locales/uk";
+import { uk } from '@/shared/locales/uk';
 import { updateSeoMeta } from '@/core/seo';
 import { SEO_ROUTES } from '@/shared/constants/seo.constants';
 import { isRouteNavigating } from '@/core/navigation-loading';
@@ -91,6 +91,12 @@ const routes: Array<RouteRecordRaw> = [
         name: PostRouteNames.EDIT_POST,
         component: () => import('@/modules/posts/pages/EditPostPage/EditPostPage.vue'),
         meta: { requiresAuth: true, title: uk.posts.editor.title, ...noIndexMeta }
+    },
+    {
+        path: '/posts/:postId(\\d+)/sync',
+        name: PostRouteNames.SYNC_POST,
+        component: () => import('@/modules/posts/pages/SyncPostPage/SyncPostPage.vue'),
+        meta: { requiresAuth: true, title: uk.posts.sync.title, ...noIndexMeta }
     },
     {
         path: '/forgot-password',

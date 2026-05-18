@@ -4,6 +4,7 @@ export type UserPostsAuthorType = 'author' | 'original';
 
 export interface GetUserPostsQuery {
     search?: string;
+    status?: string;
     sortBy?: UserPostsSortBy;
     sortOrder?: UserPostsSortOrder;
     authorType?: UserPostsAuthorType;

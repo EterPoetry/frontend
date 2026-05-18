@@ -18,6 +18,13 @@ const currentTimeSeconds = ref(0);
 const durationSeconds = ref(0);
 const volume = ref(1);
 const isMuted = ref(false);
+const audioEnergy = ref(0);
+const audioFrequencyBands = ref({
+    low: 0,
+    mid: 0,
+    high: 0,
+    peak: 0,
+});
 const countedListenVersion = ref(0);
 const lastCountedPostId = ref<number | null>(null);
 
@@ -32,6 +39,12 @@ let hasAttemptedRestore = false;
 let pendingRestoreTimeSeconds: number | null = null;
 let lastPersistedAt = 0;
 let activePostSyncRequestId = 0;
+let audioContext: AudioContext | null = null;
+let audioAnalyser: AnalyserNode | null = null;
+let audioSource: MediaElementAudioSourceNode | null = null;
+let audioDataArray: Uint8Array<ArrayBuffer> | null = null;
+let audioTimeDomainDataArray: Uint8Array<ArrayBuffer> | null = null;
+let audioEnergyAnimationFrameId: number | null = null;
 
 const createListenSessionId = (): string => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -45,6 +58,166 @@ const clearListenProgressTimer = (): void => {
     if (listenProgressTimerId !== null) {
         window.clearInterval(listenProgressTimerId);
         listenProgressTimerId = null;
+    }
+};
+
+const stopAudioEnergyMeter = (): void => {
+    if (audioEnergyAnimationFrameId !== null) {
+        window.cancelAnimationFrame(audioEnergyAnimationFrameId);
+        audioEnergyAnimationFrameId = null;
+    }
+};
+
+const smoothAudioValue = (previous: number, next: number, attack = 0.12, release = 0.045): number => {
+    const factor = next > previous ? attack : release;
+
+    return previous + (next - previous) * factor;
+};
+
+const decayAudioFrequencyBands = (): void => {
+    audioFrequencyBands.value = {
+        low: audioFrequencyBands.value.low * 0.94,
+        mid: audioFrequencyBands.value.mid * 0.945,
+        high: audioFrequencyBands.value.high * 0.95,
+        peak: audioFrequencyBands.value.peak * 0.92,
+    };
+};
+
+const canUseAudioEnergyMeter = (): boolean => {
+    if (!audioElement.currentSrc) {
+        return false;
+    }
+
+    try {
+        const audioUrl = new URL(audioElement.currentSrc, window.location.href);
+
+        return audioUrl.origin === window.location.origin || ['blob:', 'data:'].includes(audioUrl.protocol);
+    } catch (_error) {
+        return false;
+    }
+};
+
+const tickAudioEnergyMeter = (): void => {
+    if (!audioAnalyser || !audioDataArray || !audioTimeDomainDataArray || audioElement.paused) {
+        audioEnergy.value = Math.max(0, audioEnergy.value * 0.94);
+        decayAudioFrequencyBands();
+        audioEnergyAnimationFrameId = null;
+        return;
+    }
+
+    audioAnalyser.getByteFrequencyData(audioDataArray);
+    audioAnalyser.getByteTimeDomainData(audioTimeDomainDataArray);
+    const timeDomainData = audioTimeDomainDataArray;
+
+    const averageBins = (start: number, end: number): number => {
+        let total = 0;
+        const safeEnd = Math.min(end, audioDataArray?.length ?? 0);
+
+        for (let index = start; index < safeEnd; index += 1) {
+            total += audioDataArray?.[index] ?? 0;
+        }
+
+        return total / Math.max(1, safeEnd - start);
+    };
+
+    const getWaveformMetrics = (): { peak: number; rms: number; motion: number } => {
+        let maxAmplitude = 0;
+        let totalSquare = 0;
+        let totalMotion = 0;
+        let previousSample = 0;
+
+        for (let index = 0; index < timeDomainData.length; index += 1) {
+            const normalizedSample = ((timeDomainData[index] ?? 128) - 128) / 128;
+            const amplitude = Math.abs(normalizedSample);
+
+            if (amplitude > maxAmplitude) {
+                maxAmplitude = amplitude;
+            }
+
+            totalSquare += normalizedSample * normalizedSample;
+
+            if (index > 0) {
+                totalMotion += Math.abs(normalizedSample - previousSample);
+            }
+
+            previousSample = normalizedSample;
+        }
+
+        return {
+            peak: maxAmplitude,
+            rms: Math.sqrt(totalSquare / Math.max(1, timeDomainData.length)),
+            motion: totalMotion / Math.max(1, timeDomainData.length - 1),
+        };
+    };
+
+    let maxFrequencyPeak = 0;
+
+    for (let index = 0; index < Math.min(78, audioDataArray.length); index += 1) {
+        const value = audioDataArray[index] ?? 0;
+
+        if (value > maxFrequencyPeak) {
+            maxFrequencyPeak = value;
+        }
+    }
+
+    const waveform = getWaveformMetrics();
+    const normalizedWaveformRms = Math.min(1, Math.max(0, (waveform.rms - 0.01) / 0.18));
+    const normalizedWaveformPeak = Math.min(1, Math.max(0, (waveform.peak - 0.02) / 0.54));
+    const normalizedWaveformMotion = Math.min(1, Math.max(0, waveform.motion / 0.12));
+    const low = Math.min(1, Math.max(0, averageBins(1, 12) / 146));
+    const mid = Math.min(1, Math.max(0, averageBins(12, 36) / 154));
+    const high = Math.min(1, Math.max(0, averageBins(36, 96) / 150));
+    const peak = Math.min(1, Math.max(0, maxFrequencyPeak / 255));
+    const normalizedEnergy = Math.min(
+        1,
+        low * 0.34
+            + mid * 0.22
+            + high * 0.1
+            + peak * 0.08
+            + normalizedWaveformRms * 0.18
+            + normalizedWaveformPeak * 0.05
+            + normalizedWaveformMotion * 0.03,
+    );
+
+    audioFrequencyBands.value = {
+        low: smoothAudioValue(audioFrequencyBands.value.low, Math.min(1, low * 0.76 + normalizedWaveformRms * 0.24), 0.2, 0.07),
+        mid: smoothAudioValue(audioFrequencyBands.value.mid, Math.min(1, mid * 0.78 + normalizedWaveformMotion * 0.22), 0.18, 0.065),
+        high: smoothAudioValue(audioFrequencyBands.value.high, Math.min(1, high * 0.74 + normalizedWaveformPeak * 0.26), 0.15, 0.055),
+        peak: smoothAudioValue(audioFrequencyBands.value.peak, Math.min(1, peak * 0.68 + normalizedWaveformPeak * 0.32), 0.24, 0.1),
+    };
+    audioEnergy.value = smoothAudioValue(audioEnergy.value, normalizedEnergy, 0.22, 0.075);
+    audioEnergyAnimationFrameId = window.requestAnimationFrame(tickAudioEnergyMeter);
+};
+
+const startAudioEnergyMeter = async (): Promise<void> => {
+    if (typeof window === 'undefined' || typeof AudioContext === 'undefined' || !canUseAudioEnergyMeter()) {
+        return;
+    }
+
+    try {
+        audioContext ??= new AudioContext();
+
+        if (!audioSource) {
+            audioSource = audioContext.createMediaElementSource(audioElement);
+            audioAnalyser = audioContext.createAnalyser();
+            audioAnalyser.fftSize = 1024;
+            audioAnalyser.smoothingTimeConstant = 0.78;
+            audioDataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
+            audioTimeDomainDataArray = new Uint8Array(audioAnalyser.fftSize);
+            audioSource.connect(audioAnalyser);
+            audioAnalyser.connect(audioContext.destination);
+        }
+
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
+        stopAudioEnergyMeter();
+        audioEnergyAnimationFrameId = window.requestAnimationFrame(tickAudioEnergyMeter);
+    } catch (error) {
+        audioEnergy.value = 0;
+        audioFrequencyBands.value = { low: 0, mid: 0, high: 0, peak: 0 };
+        console.error('Failed to initialize audio energy meter.', error);
     }
 };
 
@@ -147,11 +320,14 @@ const handleTimeUpdate = (): void => {
 
 const handlePlay = (): void => {
     isPlaying.value = true;
+    void startAudioEnergyMeter();
     persistPlayerState(true);
 };
 
 const handlePause = (): void => {
     isPlaying.value = false;
+    stopAudioEnergyMeter();
+    audioEnergy.value = 0;
     persistPlayerState(true);
 };
 
@@ -290,6 +466,9 @@ const teardownCurrentPost = async (
 
 const handleEnded = async (): Promise<void> => {
     const postsStore = usePostsStore();
+
+    stopAudioEnergyMeter();
+    audioEnergy.value = 0;
     const postId = activePost.value?.postId;
 
     clearListenProgressTimer();
@@ -504,18 +683,6 @@ export const usePostPlayer = () => {
             }
 
             syncActivePost(latestPost);
-
-            const likeState = await postsStore.fetchPostLikeState(postId);
-
-            if (!likeState || requestId !== activePostSyncRequestId || activePost.value?.postId !== postId) {
-                return;
-            }
-
-            syncActivePost({
-                ...latestPost,
-                isLiked: likeState.isLiked,
-                likesCount: likeState.likesCount ?? latestPost.likesCount,
-            });
         } catch (_error) {
             return;
         }
@@ -582,16 +749,6 @@ export const usePostPlayer = () => {
             activePost.value = latestPost;
             durationSeconds.value = latestPost.audioDurationSeconds ?? durationSeconds.value;
 
-            const likeState = await postsStore.fetchPostLikeState(storedState.post.postId);
-
-            if (likeState && requestId === activePostSyncRequestId && activePost.value?.postId === storedState.post.postId) {
-                activePost.value = {
-                    ...activePost.value,
-                    isLiked: likeState.isLiked,
-                    likesCount: likeState.likesCount ?? activePost.value.likesCount,
-                };
-            }
-
             if (audioElement.src !== latestPost.audioFileUrl) {
                 audioElement.src = latestPost.audioFileUrl;
                 audioElement.load();
@@ -629,6 +786,8 @@ export const usePostPlayer = () => {
         countedListenVersion,
         currentTimeSeconds,
         durationSeconds,
+        audioEnergy,
+        audioFrequencyBands,
         hasActivePost,
         isMuted,
         isPlaying,
@@ -644,5 +803,6 @@ export const usePostPlayer = () => {
         togglePostPlayback,
         closePlayer,
         volume,
+        audioElement
     };
 };

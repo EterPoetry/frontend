@@ -85,6 +85,7 @@ export const useCreatePostModal = (
     const durationLimitSeconds = computed(() => props.durationLimitMinutes * TIME_CONVERSION.SECONDS_PER_MINUTE);
     const formattedLimit = computed(() => `${props.durationLimitMinutes} ${uk.posts.modal.minutesSuffix}`);
     const supportedFormatsLabel = computed(() => SUPPORTED_AUDIO_EXTENSIONS.join(', '));
+    const isUploadMode = computed(() => activeMode.value === 'upload');
     const currentSelection = computed(() => activeMode.value === 'record' ? recordSelection.value : uploadSelection.value);
     const hasSelection = computed(() => Boolean(currentSelection.value.file && currentSelection.value.previewUrl));
     const currentSelectionFile = computed(() => currentSelection.value.file);
@@ -319,9 +320,32 @@ export const useCreatePostModal = (
         await applySelectedFile(file);
     };
 
-    const handleDrop = async (event: DragEvent): Promise<void> => {
+    const handleDragOver = (event: DragEvent): void => {
+        if (!isUploadMode.value) {
+            return;
+        }
+
+        event.preventDefault();
+        isDragging.value = true;
+    };
+
+    const handleDragLeave = (event: DragEvent): void => {
+        if (!isUploadMode.value) {
+            return;
+        }
+
         event.preventDefault();
         isDragging.value = false;
+    };
+
+    const handleDrop = async (event: DragEvent): Promise<void> => {
+        isDragging.value = false;
+
+        if (!isUploadMode.value) {
+            return;
+        }
+
+        event.preventDefault();
 
         const file = event.dataTransfer?.files?.[0];
         if (!file) {
@@ -550,6 +574,7 @@ export const useCreatePostModal = (
 
     watch(activeMode, () => {
         errorMessage.value = '';
+        isDragging.value = false;
         isRemoveRecordConfirmOpen.value = false;
     });
 
@@ -578,6 +603,8 @@ export const useCreatePostModal = (
         fileInput,
         formattedLimit,
         handleCloseClick,
+        handleDragLeave,
+        handleDragOver,
         handleDrop,
         handleNativeFileSelection,
         handleRemoveSelection,

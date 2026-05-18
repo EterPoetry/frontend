@@ -1,34 +1,38 @@
 <script setup lang="ts">
 import { isAxiosError } from 'axios';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { updatePostSeoMeta, clearJsonLd } from '@/core/seo';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
-import { useProfileStore } from '@/modules/profile/profile.store';
-import heartIconUrl from '@/shared/assets/icons/ui/heart.svg';
-import heartActiveIconUrl from '@/shared/assets/icons/ui/heart-active.svg';
-import commentIconUrl from '@/shared/assets/icons/ui/comment.svg';
-import closeIconUrl from '@/shared/assets/icons/ui/close.svg';
-import flagIconUrl from '@/shared/assets/icons/ui/flag.svg';
-import PostComplaintDialog from '@/modules/posts/components/PostComplaintDialog/PostComplaintDialog.vue';
-import { usePostComplaint } from '@/modules/posts/composables/usePostComplaint';
-import playsIconUrl from '@/shared/assets/icons/ui/plays.svg';
-import playIconUrl from '@/shared/assets/icons/ui/play.svg';
-import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
 import CreatePostModal from '@/modules/posts/components/CreatePostModal/CreatePostModal.vue';
 import PostCategoryTags from '@/modules/posts/components/PostCategoryTags/PostCategoryTags.vue';
+import PostComplaintDialog from '@/modules/posts/components/PostComplaintDialog/PostComplaintDialog.vue';
+import PostImmersiveMode from '@/modules/posts/components/PostImmersiveMode/PostImmersiveMode.vue';
+import { usePostComplaint } from '@/modules/posts/composables/usePostComplaint';
+import { usePostPageComments } from '@/modules/posts/composables/usePostPageComments';
+import { usePostPageImmersiveMode } from '@/modules/posts/composables/usePostPageImmersiveMode';
 import { usePostPlayer } from '@/modules/posts/composables/usePostPlayer';
 import { usePostsAppShell } from '@/modules/posts/composables/usePostsAppShell';
 import { CommentSortOrder } from '@/modules/posts/enums/comment-sort-order.enum';
-import { PostStatus } from '@/modules/posts/enums/post-status.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
-import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
-import { PostComment } from '@/modules/posts/interfaces/post-comment.interface';
-import { Post } from '@/modules/posts/interfaces/post.interface';
+import { PostStatus } from '@/modules/posts/enums/post-status.enum';
 import type { PostTextSynchronizationItem } from '@/modules/posts/interfaces/post-text-synchronization-item.interface';
 import { usePostsStore } from '@/modules/posts/posts.store';
-import { formatPostDuration } from '@/modules/posts/utils/post-formatting.utils';
 import { getAuthorInitial } from '@/modules/posts/utils/post-author.utils';
+import { formatPostDuration } from '@/modules/posts/utils/post-formatting.utils';
+import { useProfileStore } from '@/modules/profile/profile.store';
+import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
+import heartActiveIconUrl from '@/shared/assets/icons/ui/heart-active.svg';
+import heartIconUrl from '@/shared/assets/icons/ui/heart.svg';
+import closeIconUrl from '@/shared/assets/icons/ui/close.svg';
+import commentIconUrl from '@/shared/assets/icons/ui/comment.svg';
+import flagIconUrl from '@/shared/assets/icons/ui/flag.svg';
+import pauseLightIconUrl from '@/shared/assets/icons/ui/pause-light.svg';
+import playIconUrl from '@/shared/assets/icons/ui/play.svg';
+import playsIconUrl from '@/shared/assets/icons/ui/plays.svg';
+import { MOBILE_BREAKPOINT_PX } from '@/shared/constants/breakpoints.constants';
+import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import AppShell from '@/shared/components/AppShell/AppShell.vue';
 import BaseBottomSheet from '@/shared/components/BaseBottomSheet/BaseBottomSheet.vue';
 import BaseField from '@/shared/components/BaseField/BaseField.vue';
@@ -38,11 +42,6 @@ import ProfileIdentity from '@/shared/components/ProfileIdentity/ProfileIdentity
 import { uk } from '@/shared/locales/uk';
 import { formatCompactNumber } from '@/shared/utils/number.utils';
 import { extractPostId } from '@/shared/utils/post-slug.utils';
-import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
-import { BaseFieldHandle } from '@/shared/interfaces/base-field-handle.interface';
-import { MOBILE_BREAKPOINT_PX } from '@/shared/constants/breakpoints.constants';
-import { COMMENTS_PAGE_LIMIT, REPLIES_PAGE_LIMIT, COMMENTS_FOCUS_EVENT, COMMENTS_FOCUS_QUERY_TARGET } from '@/modules/posts/constants/post-comments.constants';
-import { updatePostSeoMeta, clearJsonLd } from '@/core/seo';
 import './PostPage.css';
 
 const postsStore = usePostsStore();
@@ -77,30 +76,17 @@ const {
 } = usePostComplaint();
 
 const isLoadingPost = ref(false);
-const isLoadingComments = ref(false);
-const commentsSort = ref<CommentSortOrder>(CommentSortOrder.NEWEST);
 const isDeletingPost = ref(false);
 const isDeletePostDialogOpen = ref(false);
-const pendingDeleteComment = ref<PostComment | null>(null);
-const isSubmittingComment = ref(false);
 const postErrorMessage = ref('');
-const commentsErrorMessage = ref('');
-const rootCommentDraft = ref('');
-const replyDrafts = ref<Record<number, string>>({});
-const replyFormCommentIds = ref<number[]>([]);
-const expandedReplyCommentIds = ref<number[]>([]);
-const loadingReplyCommentIds = ref<number[]>([]);
 const likePendingPostIds = ref<number[]>([]);
-const likePendingCommentIds = ref<number[]>([]);
-const deletingCommentIds = ref<number[]>([]);
 const isProfileLoading = ref(false);
 const isFollowPending = ref(false);
-const lineElements: Record<number, HTMLElement | null> = {};
-const commentsSectionElement = ref<HTMLElement | null>(null);
-const rootCommentInputElement = ref<BaseFieldHandle | null>(null);
-const isCommentsFocusPending = ref(false);
-const isMobileCommentsSheetOpen = ref(false);
 const isMobileViewport = ref(false);
+const lineElements: Record<number, HTMLElement | null> = {};
+const textContentRef = ref<HTMLElement | null>(null);
+const leadingSilenceToleranceMs = 120;
+const trailingSilenceToleranceMs = 160;
 let activePostRequestId = 0;
 let activeProfileRequestId = 0;
 
@@ -124,6 +110,7 @@ const isOwnPost = computed(() => {
 
 const isPublishedPost = computed(() => activePost.value?.status === PostStatus.PUBLISHED);
 const isCommentsAvailable = computed(() => !!activePost.value && isPublishedPost.value);
+const canLoadAuthenticatedPostState = computed(() => authStore.isInitialized || !authStore.token);
 const authorProfile = computed(() => {
     const authorUserId = activePost.value?.author.userId;
 
@@ -153,6 +140,48 @@ const formattedPublishedDate = computed(() => {
 const synchronizationMap = computed<Map<number, PostTextSynchronizationItem>>(() => new Map(
     (activePost.value?.textSynchronization ?? []).map((item) => [item.lineIndex, item]),
 ));
+const firstSynchronizedLineIndex = computed<number | null>(() => {
+    const synchronization = activePost.value?.textSynchronization ?? [];
+
+    if (!synchronization.length) {
+        return null;
+    }
+
+    return synchronization[0]?.lineIndex ?? null;
+});
+const lastSynchronizedLineIndex = computed<number | null>(() => {
+    const synchronization = activePost.value?.textSynchronization ?? [];
+
+    if (!synchronization.length) {
+        return null;
+    }
+
+    return synchronization[synchronization.length - 1]?.lineIndex ?? null;
+});
+const leadingSilenceEndMs = computed(() => {
+    const silences = activePost.value?.audioAnalysis?.silences ?? [];
+
+    const leadingSilence = silences.find(([startMs, endMs]) => (
+        startMs <= leadingSilenceToleranceMs && endMs > leadingSilenceToleranceMs
+    ));
+
+    return leadingSilence?.[1] ?? 0;
+});
+const trailingSilenceStartMs = computed<number | null>(() => {
+    const analysis = activePost.value?.audioAnalysis;
+    const silences = analysis?.silences ?? [];
+    const durationMs = analysis?.durationMs ?? Math.round((activePost.value?.audioDurationSeconds ?? 0) * 1000);
+
+    if (!durationMs) {
+        return null;
+    }
+
+    const trailingSilence = [...silences].reverse().find(([startMs, endMs]) => (
+        endMs >= durationMs - trailingSilenceToleranceMs && startMs < durationMs - trailingSilenceToleranceMs
+    ));
+
+    return trailingSilence?.[0] ?? null;
+});
 const canManageSynchronization = computed(() => !!activePost.value
     && isOwnPost.value
     && !!authStore.user?.isPremium
@@ -171,6 +200,11 @@ const activeLineIndex = computed<number | null>(() => {
     }
 
     const currentMomentMs = Math.floor(player.currentTimeSeconds.value * 1000);
+
+    if (currentMomentMs < leadingSilenceEndMs.value) {
+        return null;
+    }
+
     let matchedLineIndex: number | null = null;
 
     for (const item of synchronization) {
@@ -180,6 +214,15 @@ const activeLineIndex = computed<number | null>(() => {
         }
 
         break;
+    }
+
+    if (
+        matchedLineIndex !== null
+        && matchedLineIndex === lastSynchronizedLineIndex.value
+        && trailingSilenceStartMs.value !== null
+        && currentMomentMs >= trailingSilenceStartMs.value
+    ) {
+        return null;
     }
 
     return matchedLineIndex;
@@ -200,149 +243,26 @@ const displayedCommentsCount = computed(() => {
     return Math.max(postCommentsCount, postsStore.commentsTotal);
 });
 
-const getCommentReplies = (commentId: number): PostComment[] => postsStore.commentReplies[commentId] ?? [];
-const isReplyFormOpen = (commentId: number): boolean => replyFormCommentIds.value.includes(commentId);
-const isRepliesExpanded = (commentId: number): boolean => expandedReplyCommentIds.value.includes(commentId);
-const isRepliesLoading = (commentId: number): boolean => loadingReplyCommentIds.value.includes(commentId);
-const isCommentDeleting = (commentId: number): boolean => deletingCommentIds.value.includes(commentId);
-const isCommentLikePending = (commentId: number): boolean => likePendingCommentIds.value.includes(commentId);
-const hasRepliesLoaded = (commentId: number): boolean => Object.prototype.hasOwnProperty.call(postsStore.commentReplies, commentId);
-const isLikedByPostAuthor = (comment: PostComment): boolean => comment.isLikedByAuthor;
-const canLoadAuthenticatedPostState = computed(() => authStore.isInitialized || !authStore.token);
-
 const syncMobileViewport = (): void => {
     isMobileViewport.value = window.innerWidth <= MOBILE_BREAKPOINT_PX;
-};
-
-const openCommentsSheet = (): void => {
-    isMobileCommentsSheetOpen.value = true;
-};
-
-const closeCommentsSheet = (): void => {
-    isMobileCommentsSheetOpen.value = false;
-};
-
-const focusCommentsComposer = async (): Promise<void> => {
-    if (!isCommentsAvailable.value) {
-        return;
-    }
-
-    if (isMobileViewport.value) {
-        openCommentsSheet();
-    }
-
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-        await nextTick();
-        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-
-        const commentInput = rootCommentInputElement.value;
-        const commentInputElement = commentInput?.getControlElement() ?? null;
-
-        if (!commentsSectionElement.value || !commentInput || !commentInputElement) {
-            continue;
-        }
-
-        commentsSectionElement.value.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-        });
-        commentInput.focus();
-        commentInput.setSelectionRange(
-            rootCommentDraft.value.length,
-            rootCommentDraft.value.length,
-        );
-
-        if (document.activeElement === commentInputElement) {
-            return;
-        }
-    }
-};
-
-const requestCommentsFocus = (): void => {
-    isCommentsFocusPending.value = true;
-
-    if (activePost.value && !isLoadingPost.value && !isLoadingComments.value) {
-        void focusCommentsComposer().finally(() => {
-            isCommentsFocusPending.value = false;
-        });
-    }
-};
-
-const handleCommentsFocusEvent = (event: Event): void => {
-    const customEvent = event as CustomEvent<{ postId?: number }>;
-
-    if (!customEvent.detail?.postId || customEvent.detail.postId !== activePost.value?.postId) {
-        return;
-    }
-
-    requestCommentsFocus();
-};
-
-const formatCommentTime = (value?: string): string => {
-    if (!value) {
-        return '';
-    }
-
-    const timestamp = new Date(value).getTime();
-
-    if (!Number.isFinite(timestamp)) {
-        return '';
-    }
-
-    const diffMs = Math.max(0, Date.now() - timestamp);
-    const diffMinutes = Math.floor(diffMs / 60_000);
-
-    if (diffMinutes < 1) {
-        return uk.posts.details.timeAgoNow;
-    }
-
-    if (diffMinutes < 60) {
-        return uk.posts.details.timeAgoMinutes(diffMinutes);
-    }
-
-    const diffHours = Math.floor(diffMinutes / 60);
-
-    if (diffHours < 24) {
-        return uk.posts.details.timeAgoHours(diffHours);
-    }
-
-    const diffDays = Math.floor(diffHours / 24);
-
-    return uk.posts.details.timeAgoDays(diffDays);
-};
-
-const canDeleteComment = (comment: PostComment): boolean => {
-    const userId = authStore.user?.userId;
-
-    return !!userId && (comment.author.userId === userId || activePost.value?.authorId === userId);
 };
 
 const setLineElement = (lineIndex: number, element: unknown): void => {
     lineElements[lineIndex] = element instanceof HTMLElement ? element : null;
 };
 
+const setCommentsSectionElement = (element: Element | unknown): void => {
+    commentsController.commentsSectionElement.value = element instanceof HTMLElement ? element : null;
+};
+
+const setRootCommentInputElement = (element: unknown): void => {
+    commentsController.rootCommentInputElement.value = element as typeof commentsController.rootCommentInputElement.value;
+};
+
 const syncPlayerPostState = (): void => {
     if (activePost.value) {
         player.syncActivePost(activePost.value);
     }
-};
-
-const syncLoadedPostLikeState = async (post: Post, requestId: number): Promise<Post> => {
-    if (!authStore.isAuthenticated) {
-        return post;
-    }
-
-    const likeState = await postsStore.fetchPostLikeState(post.postId);
-
-    if (!likeState || requestId !== activePostRequestId) {
-        return post;
-    }
-
-    return {
-        ...post,
-        isLiked: likeState.isLiked,
-        likesCount: likeState.likesCount ?? post.likesCount,
-    };
 };
 
 const syncSpecificPostToPlayer = (postId: number, isLiked: boolean, likesCount?: number): void => {
@@ -369,6 +289,62 @@ const ensureAuthenticated = async (): Promise<boolean> => {
     return false;
 };
 
+const commentsController = usePostPageComments({
+    activePost,
+    routePostId,
+    isCommentsAvailable,
+    isOwnPost,
+    isLoadingPost,
+    isMobileViewport,
+    ensureAuthenticated,
+    syncPlayerPostState,
+});
+
+const {
+    isLoadingComments,
+    commentsSort,
+    pendingDeleteComment,
+    isSubmittingComment,
+    commentsErrorMessage,
+    rootCommentDraft,
+    replyDrafts,
+    openCommentsSheet,
+    closeCommentsSheet,
+    resolvePendingCommentsFocus,
+    formatCommentTime,
+    canDeleteComment,
+    loadComments,
+    changeCommentsSort,
+    getCommentReplies,
+    isReplyFormOpen,
+    isRepliesExpanded,
+    isRepliesLoading,
+    isCommentDeleting,
+    isCommentLikePending,
+    isLikedByPostAuthor,
+    toggleCommentLike,
+    submitComment,
+    toggleReplyForm,
+    toggleReplies,
+    loadMoreReplies,
+    requestDeleteComment,
+    closeDeleteCommentDialog,
+    confirmDeleteComment,
+    isMobileCommentsSheetOpen,
+} = commentsController;
+
+const {
+    isImmersiveModeOpen,
+    hasImmersiveMode,
+    openImmersiveMode,
+    closeImmersiveMode,
+    toggleImmersivePlayback,
+    seekImmersiveProgress,
+} = usePostPageImmersiveMode({
+    activePost,
+    player,
+});
+
 const loadAuthorProfile = async (userId: number): Promise<void> => {
     const requestId = ++activeProfileRequestId;
 
@@ -378,7 +354,7 @@ const loadAuthorProfile = async (userId: number): Promise<void> => {
 
     try {
         await profileStore.getPublicProfile(userId);
-    } catch (error) {
+    } catch {
         if (requestId !== activeProfileRequestId) {
             return;
         }
@@ -389,40 +365,6 @@ const loadAuthorProfile = async (userId: number): Promise<void> => {
             isProfileLoading.value = false;
         }
     }
-};
-
-const loadComments = async (reset = true): Promise<void> => {
-    if (!routePostId.value || !isCommentsAvailable.value) {
-        postsStore.clearPostComments();
-        return;
-    }
-
-    if (reset) {
-        isLoadingComments.value = true;
-        commentsErrorMessage.value = '';
-    }
-
-    try {
-        await postsStore.getPostComments(routePostId.value, {
-            limit: COMMENTS_PAGE_LIMIT,
-            sort: commentsSort.value,
-            ...(reset ? {} : { cursor: postsStore.commentsNextCursor ?? undefined }),
-        });
-    } catch (error) {
-        commentsErrorMessage.value = uk.posts.details.commentsLoadFailed;
-    } finally {
-        isLoadingComments.value = false;
-    }
-};
-
-const changeCommentsSort = (sort: CommentSortOrder): void => {
-    if (commentsSort.value === sort) {
-        return;
-    }
-
-    commentsSort.value = sort;
-    postsStore.clearPostComments();
-    void loadComments(true);
 };
 
 const loadPost = async (postId: number): Promise<void> => {
@@ -437,9 +379,6 @@ const loadPost = async (postId: number): Promise<void> => {
     commentsErrorMessage.value = '';
     commentsSort.value = CommentSortOrder.NEWEST;
     postsStore.clearPostComments();
-    replyFormCommentIds.value = [];
-    expandedReplyCommentIds.value = [];
-    loadingReplyCommentIds.value = [];
 
     try {
         const fetchedPost = await postsStore.fetchPost(postId);
@@ -448,25 +387,19 @@ const loadPost = async (postId: number): Promise<void> => {
             return;
         }
 
-        const post = await syncLoadedPostLikeState(fetchedPost, requestId);
+        postsStore.currentPost = fetchedPost;
 
-        if (requestId !== activePostRequestId) {
-            return;
-        }
-
-        postsStore.currentPost = post;
-
-        if (routeSlug.value && post.slug !== routeSlug.value) {
-            await router.replace({ name: PostRouteNames.POST, params: { slug: post.slug }, query: route.query, hash: route.hash });
+        if (routeSlug.value && fetchedPost.slug !== routeSlug.value) {
+            await router.replace({ name: PostRouteNames.POST, params: { slug: fetchedPost.slug }, query: route.query, hash: route.hash });
         }
 
         if (requestId !== activePostRequestId) {
             return;
         }
 
-        updatePostSeoMeta(post, `/posts/${post.slug}`);
+        updatePostSeoMeta(fetchedPost, `/posts/${fetchedPost.slug}`);
         syncPlayerPostState();
-        await loadAuthorProfile(post.author.userId);
+        await loadAuthorProfile(fetchedPost.author.userId);
 
         if (requestId !== activePostRequestId) {
             return;
@@ -478,10 +411,7 @@ const loadPost = async (postId: number): Promise<void> => {
             return;
         }
 
-        if (isCommentsFocusPending.value) {
-            await focusCommentsComposer();
-            isCommentsFocusPending.value = false;
-        }
+        await resolvePendingCommentsFocus();
     } catch (error) {
         if (isAxiosError(error) && error.response?.status === 404) {
             await router.replace({ name: SharedRouteNames.NOT_FOUND });
@@ -509,7 +439,7 @@ const togglePlayback = async (): Promise<void> => {
         }
 
         await player.togglePostPlayback(freshPost);
-    } catch (_error) {
+    } catch {
         await player.togglePostPlayback(activePost.value);
     }
 };
@@ -557,7 +487,7 @@ const togglePostLike = async (requestedPostId?: number): Promise<void> => {
 
         postsStore.applyPostLikeState(postId, nextIsLiked, result.likesCount);
         syncCurrentLikeState(nextIsLiked, result.likesCount);
-    } catch (_error) {
+    } catch {
         postsStore.applyPostLikeState(postId, previousIsLiked, previousLikesCount);
         syncCurrentLikeState(previousIsLiked, previousLikesCount);
     } finally {
@@ -606,7 +536,7 @@ const toggleAuthorFollow = async (): Promise<void> => {
             updatedProfile.isSubscribed,
             updatedProfile.followersCount,
         );
-    } catch (error) {
+    } catch {
         profileStore.applyProfileSubscriptionState(
             authorUserId,
             previousIsSubscribed,
@@ -618,195 +548,27 @@ const toggleAuthorFollow = async (): Promise<void> => {
     }
 };
 
-const toggleCommentLike = async (comment: PostComment): Promise<void> => {
-    if (isCommentLikePending(comment.commentId)) {
-        return;
-    }
-
-    if (!await ensureAuthenticated()) {
-        return;
-    }
-
-    const nextIsLiked = !comment.isLiked;
-    const nextIsLikedByAuthor = isOwnPost.value ? nextIsLiked : undefined;
-
-    likePendingCommentIds.value = [...likePendingCommentIds.value, comment.commentId];
-    postsStore.applyCommentLikeState(comment.commentId, nextIsLiked, undefined, nextIsLikedByAuthor);
-
-    try {
-        const result = nextIsLiked
-            ? await postsStore.likeComment(comment.commentId)
-            : await postsStore.unlikeComment(comment.commentId);
-
-        postsStore.applyCommentLikeState(comment.commentId, nextIsLiked, result.likesCount, nextIsLikedByAuthor);
-    } catch (_error) {
-        postsStore.applyCommentLikeState(comment.commentId, !nextIsLiked, undefined, isOwnPost.value ? !nextIsLiked : undefined);
-    } finally {
-        likePendingCommentIds.value = likePendingCommentIds.value.filter((pendingCommentId) => pendingCommentId !== comment.commentId);
-    }
-};
-
-const submitComment = async (replyToCommentId?: number): Promise<void> => {
-    if (!activePost.value || isSubmittingComment.value) {
-        return;
-    }
-
-    if (!await ensureAuthenticated()) {
-        return;
-    }
-
-    const isReply = Number.isInteger(replyToCommentId);
-    const draft = isReply
-        ? replyDrafts.value[replyToCommentId as number] ?? ''
-        : rootCommentDraft.value;
-    const commentText = draft.trim();
-
-    if (!commentText) {
-        return;
-    }
-
-    isSubmittingComment.value = true;
-
-    try {
-        await postsStore.createComment(activePost.value.postId, {
-            commentText,
-            ...(isReply ? { replyToCommentId } : {}),
-        });
-
-        if (isReply) {
-            replyDrafts.value = {
-                ...replyDrafts.value,
-                [replyToCommentId as number]: '',
-            };
-            replyFormCommentIds.value = replyFormCommentIds.value.filter((commentId) => commentId !== replyToCommentId);
-
-            if (!expandedReplyCommentIds.value.includes(replyToCommentId as number)) {
-                expandedReplyCommentIds.value = [...expandedReplyCommentIds.value, replyToCommentId as number];
-            }
-        } else {
-            rootCommentDraft.value = '';
-        }
-
-        syncPlayerPostState();
-    } catch (error) {
-        commentsErrorMessage.value = uk.common.errors.serverError;
-    } finally {
-        isSubmittingComment.value = false;
-    }
-};
-
-const toggleReplyForm = (commentId: number): void => {
-    if (replyFormCommentIds.value.includes(commentId)) {
-        replyFormCommentIds.value = replyFormCommentIds.value.filter((id) => id !== commentId);
-        return;
-    }
-
-    replyFormCommentIds.value = [...replyFormCommentIds.value, commentId];
-};
-
-const toggleReplies = async (comment: PostComment): Promise<void> => {
-    if (!comment.repliesCount) {
-        return;
-    }
-
-    if (isRepliesExpanded(comment.commentId)) {
-        expandedReplyCommentIds.value = expandedReplyCommentIds.value.filter((id) => id !== comment.commentId);
-        return;
-    }
-
-    expandedReplyCommentIds.value = [...expandedReplyCommentIds.value, comment.commentId];
-
-    if (hasRepliesLoaded(comment.commentId) || isRepliesLoading(comment.commentId)) {
-        return;
-    }
-
-    loadingReplyCommentIds.value = [...loadingReplyCommentIds.value, comment.commentId];
-
-    try {
-        await postsStore.getCommentReplies(comment.commentId, {
-            limit: REPLIES_PAGE_LIMIT,
-        });
-    } catch (error) {
-        commentsErrorMessage.value = uk.posts.details.commentsLoadFailed;
-    } finally {
-        loadingReplyCommentIds.value = loadingReplyCommentIds.value.filter((id) => id !== comment.commentId);
-    }
-};
-
-const loadMoreReplies = async (commentId: number): Promise<void> => {
-    if (!postsStore.commentRepliesHasMore[commentId] || isRepliesLoading(commentId)) {
-        return;
-    }
-
-    loadingReplyCommentIds.value = [...loadingReplyCommentIds.value, commentId];
-
-    try {
-        await postsStore.getCommentReplies(commentId, {
-            limit: REPLIES_PAGE_LIMIT,
-            cursor: postsStore.commentRepliesNextCursor[commentId] ?? undefined,
-        });
-    } catch (error) {
-        commentsErrorMessage.value = uk.posts.details.commentsLoadFailed;
-    } finally {
-        loadingReplyCommentIds.value = loadingReplyCommentIds.value.filter((id) => id !== commentId);
-    }
-};
-
-const deleteComment = async (comment: PostComment): Promise<void> => {
-    if (isCommentDeleting(comment.commentId)) {
-        return;
-    }
-
-    deletingCommentIds.value = [...deletingCommentIds.value, comment.commentId];
-
-    try {
-        await postsStore.deleteComment(comment.commentId);
-        syncPlayerPostState();
-    } catch (error) {
-        commentsErrorMessage.value = uk.common.errors.serverError;
-    } finally {
-        deletingCommentIds.value = deletingCommentIds.value.filter((commentId) => commentId !== comment.commentId);
-    }
-};
-
-const requestDeleteComment = (comment: PostComment): void => {
-    if (isCommentDeleting(comment.commentId)) {
-        return;
-    }
-
-    pendingDeleteComment.value = comment;
-};
-
-const closeDeleteCommentDialog = (): void => {
-    pendingDeleteComment.value = null;
-};
-
-const confirmDeleteComment = async (): Promise<void> => {
-    const comment = pendingDeleteComment.value;
-
-    if (!comment) {
-        return;
-    }
-
-    pendingDeleteComment.value = null;
-    await deleteComment(comment);
-};
-
 const deletePost = async (): Promise<void> => {
     if (!activePost.value || isDeletingPost.value) {
         return;
     }
 
+    const deletedPostId = activePost.value.postId;
+
     isDeletingPost.value = true;
 
     try {
-        const isDeleted = await postsStore.deletePost(activePost.value.postId);
+        const isDeleted = await postsStore.deletePost(deletedPostId);
 
         if (isDeleted) {
-            await router.replace({ name: PostRouteNames.HOME });
+            if (player.activePostId.value === deletedPostId) {
+                await player.closePlayer();
+            }
+
+            await router.replace({ name: ProfileRouteNames.PROFILE_ME });
             return;
         }
-    } catch (error) {
+    } catch {
         postErrorMessage.value = uk.common.errors.serverError;
     } finally {
         isDeletingPost.value = false;
@@ -815,6 +577,17 @@ const deletePost = async (): Promise<void> => {
 };
 
 const openSynchronizationManager = async (): Promise<void> => {
+    if (!activePost.value) {
+        return;
+    }
+
+    await router.push({
+        name: PostRouteNames.SYNC_POST,
+        params: { postId: activePost.value.postId },
+    });
+};
+
+const openPostEditor = async (): Promise<void> => {
     if (!activePost.value) {
         return;
     }
@@ -844,7 +617,10 @@ const jumpToLine = async (lineIndex: number): Promise<void> => {
         return;
     }
 
-    const seekPercent = (synchronizationItem.audioStartMomentMs / (post.audioDurationSeconds * 1000)) * 100;
+    const targetMomentMs = lineIndex === firstSynchronizedLineIndex.value
+        ? Math.max(synchronizationItem.audioStartMomentMs, leadingSilenceEndMs.value)
+        : synchronizationItem.audioStartMomentMs;
+    const seekPercent = (targetMomentMs / (post.audioDurationSeconds * 1000)) * 100;
     await player.seekToPercent(seekPercent);
 };
 
@@ -871,51 +647,37 @@ watch(
 );
 
 watch(activeLineIndex, (lineIndex) => {
-    if (lineIndex === null) {
+    if (lineIndex === null || isImmersiveModeOpen.value) {
         return;
     }
 
-    const element = lineElements[lineIndex];
+    const container = textContentRef.value;
+    const el = lineElements[lineIndex];
+    if (!container || !el) return;
 
-    element?.scrollIntoView({
-        block: 'nearest',
+    const containerHeight = container.clientHeight;
+    const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    const elHeight = el.offsetHeight;
+
+    container.scrollTo({
+        top: container.scrollTop + elTop - containerHeight / 2 + elHeight / 2,
         behavior: 'smooth',
     });
 });
 
-watch(
-    [() => route.query.focus, () => route.query.focusToken],
-    ([focusTarget]) => {
-        if (focusTarget !== COMMENTS_FOCUS_QUERY_TARGET) {
-            return;
-        }
-
-        requestCommentsFocus();
-    },
-    { immediate: true },
-);
-
 onMounted(() => {
     syncMobileViewport();
     window.addEventListener('resize', syncMobileViewport);
-    window.addEventListener(COMMENTS_FOCUS_EVENT, handleCommentsFocusEvent as EventListener);
 });
 
 onBeforeUnmount(() => {
     window.removeEventListener('resize', syncMobileViewport);
-    window.removeEventListener(COMMENTS_FOCUS_EVENT, handleCommentsFocusEvent as EventListener);
     document.body.style.overflow = '';
     clearJsonLd();
 });
 
-watch(isMobileViewport, (isMobile) => {
-    if (!isMobile) {
-        isMobileCommentsSheetOpen.value = false;
-    }
-});
-
-watch(isMobileCommentsSheetOpen, (isOpen) => {
-    document.body.style.overflow = isOpen && isMobileViewport.value ? 'hidden' : '';
+watch([isMobileCommentsSheetOpen, isImmersiveModeOpen, isMobileViewport], ([isCommentsOpen, isImmersiveOpen, isMobile]) => {
+    document.body.style.overflow = isImmersiveOpen || (isCommentsOpen && isMobile) ? 'hidden' : '';
 });
 </script>
 
@@ -1007,6 +769,15 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                 </div>
 
                 <div class="post-page__summary-actions">
+                  <button
+                      v-if="hasImmersiveMode"
+                      type="button"
+                      class="post-page__action-btn post-page__action-btn--immersive"
+                      @click="openImmersiveMode"
+                  >
+                    {{ uk.posts.details.immersiveMode }}
+                  </button>
+
                   <template v-if="!isOwnPost">
                     <button
                         type="button"
@@ -1023,22 +794,24 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
                   </template>
 
                   <template v-else>
-                    <button
-                        type="button"
-                        class="post-page__action-btn post-page__action-btn--primary"
-                        @click="openSynchronizationManager"
-                    >
-                      {{ uk.posts.details.edit }}
-                    </button>
+                    <div class="post-page__owner-actions">
+                      <button
+                          type="button"
+                          class="post-page__action-btn post-page__action-btn--secondary"
+                          @click="openPostEditor"
+                      >
+                        {{ uk.posts.details.edit }}
+                      </button>
 
-                    <button
-                        type="button"
-                        class="post-page__action-btn post-page__action-btn--danger"
-                        :disabled="isDeletingPost"
-                        @click="isDeletePostDialogOpen = true"
-                    >
-                      {{ uk.posts.details.delete }}
-                    </button>
+                      <button
+                          type="button"
+                          class="post-page__action-btn post-page__action-btn--danger"
+                          :disabled="isDeletingPost"
+                          @click="isDeletePostDialogOpen = true"
+                      >
+                        {{ uk.posts.details.delete }}
+                      </button>
+                    </div>
                   </template>
                 </div>
 
@@ -1137,7 +910,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
           >
             <section
                 id="comments"
-                ref="commentsSectionElement"
+                :ref="setCommentsSectionElement"
                 class="post-page__card post-page__comments"
                 :class="{ 'post-page__comments--in-sheet': isMobileViewport }"
             >
@@ -1392,7 +1165,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
 
             <div v-if="isCommentsAvailable" class="post-page__comment-composer">
               <BaseField
-                  ref="rootCommentInputElement"
+                  :ref="setRootCommentInputElement"
                   v-model="rootCommentDraft"
                   id="post-comment-root"
                   class="post-page__comment-field"
@@ -1424,7 +1197,7 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
         </section>
 
         <aside class="post-page__column post-page__column--text">
-          <section class="post-page__card post-page__text-card">
+          <section ref="textContentRef" class="post-page__card post-page__text-card">
             <div class="post-page__text-head">
               <h2 class="post-page__section-title">{{ uk.posts.details.textTitle }}</h2>
 
@@ -1469,6 +1242,23 @@ watch(isMobileCommentsSheetOpen, (isOpen) => {
           </section>
         </aside>
       </div>
+
+      <PostImmersiveMode
+          v-if="activePost"
+          :is-open="isImmersiveModeOpen"
+          :post="activePost"
+          :current-time-seconds="player.currentTimeSeconds.value"
+          :progress-percent="player.progressPercent.value"
+          :is-playing="player.isPlaying.value && player.activePostId.value === activePost.postId"
+          :volume="player.volume.value"
+          :is-muted="player.isMuted.value"
+          :audio-element="player.audioElement"
+          @close="closeImmersiveMode"
+          @toggle-playback="toggleImmersivePlayback"
+          @seek="seekImmersiveProgress"
+          @set-volume="player.setVolume"
+          @toggle-mute="player.toggleMute"
+      />
 
       <ConfirmDialog
           v-if="isDeletePostDialogOpen"
