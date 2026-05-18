@@ -75,7 +75,8 @@ const smoothFrame = ref<AnalysisFrame>({
 let visualFrameId: number | null = null;
 let visualStartedAt = 0;
 let visualBaseTimeSeconds = 0;
-let frameSkip = false;
+let frameSkipCounter = 0;
+let frameSkipModulo = 2;
 let cachedAudioElement: HTMLAudioElement | null | undefined = undefined;
 
 const maxMemoryLines = 11;
@@ -388,7 +389,7 @@ const voiceGlows = computed<VoiceGlow[]>(() => {
 const voiceStrokes = computed<VoiceStroke[]>(() => {
   const frame = smoothFrame.value;
   const accent = nearbyAccentStrength.value;
-  const count = 36;
+  const count = window.innerWidth < 760 ? 18 : 36;
 
   return Array.from({ length: count }, (_, index) => {
     const seed = index + 1;
@@ -549,7 +550,8 @@ const stopVisualClock = (): void => {
 
 const startVisualClock = (): void => {
   stopVisualClock();
-  frameSkip = false;
+  frameSkipCounter = 0;
+  frameSkipModulo = window.innerWidth < 760 ? 3 : 2;
 
   visualBaseTimeSeconds = Number.isFinite(Number(props.currentTimeSeconds))
       ? Number(props.currentTimeSeconds)
@@ -578,9 +580,9 @@ const startVisualClock = (): void => {
       }
     }
 
-    frameSkip = !frameSkip;
+    frameSkipCounter = (frameSkipCounter + 1) % frameSkipModulo;
 
-    if (!frameSkip) {
+    if (frameSkipCounter === 0) {
       smoothAudioFrame(currentAnalysisFrame.value);
     }
 

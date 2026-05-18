@@ -98,10 +98,7 @@
     transform:
             translate3d(0, calc(var(--audio-low) * -8px), 0)
             scale(calc(1 + var(--audio-energy) * 0.014));
-    transition:
-            opacity 520ms ease,
-            transform 520ms ease,
-            background 720ms ease;
+    will-change: transform, opacity;
 }
 
 .post-immersive-mode__spotlight {
@@ -120,15 +117,11 @@
                     ),
                     transparent 42%
             );
-    filter: blur(calc(16px + var(--audio-energy) * 10px));
+    filter: blur(24px);
     transform:
             translate3d(0, calc(var(--audio-low) * -8px), 0)
             scale(calc(1 + var(--audio-energy) * 0.04 + var(--audio-accent) * 0.025));
-    transition:
-            opacity 420ms ease,
-            filter 520ms ease,
-            transform 520ms ease,
-            background 760ms ease;
+    will-change: transform, opacity;
 }
 
 .post-immersive-mode__ink {
@@ -139,9 +132,6 @@
     background: radial-gradient(circle, rgba(184, 105, 70, 0.2), transparent 68%);
     filter: blur(6px);
     transform: translate3d(0, 0, 0) scale(calc(0.98 + var(--audio-low) * 0.06));
-    transition:
-            opacity 420ms ease,
-            transform 520ms ease;
     animation: voice-field-ink 20s ease-in-out infinite;
 }
 
@@ -327,10 +317,6 @@
     backdrop-filter: blur(2px);
     opacity: calc(0.58 + var(--line-presence) * 0.28 + var(--audio-mid) * 0.05);
     transform: scale(calc(0.98 + var(--audio-low) * 0.02 + var(--audio-accent) * 0.014));
-    transition:
-            opacity 420ms ease,
-            transform 420ms ease,
-            background 720ms ease;
 }
 
 .post-immersive-mode__focus::after {
@@ -348,10 +334,6 @@
             );
     filter: blur(34px);
     transform: scale(calc(0.92 + var(--audio-peak) * 0.1 + var(--audio-accent) * 0.08));
-    transition:
-            opacity 220ms ease,
-            transform 260ms ease,
-            background 720ms ease;
 }
 
 .post-immersive-mode__voice-field {
@@ -361,9 +343,6 @@
     pointer-events: none;
     opacity: calc((0.72 + var(--audio-energy) * 0.14 - var(--silence) * 0.16) * (0.52 + var(--line-presence) * 0.48));
     transform: scale(calc(0.99 + var(--audio-energy) * 0.01 + var(--audio-accent) * 0.014));
-    transition:
-            opacity 300ms ease,
-            transform 320ms ease;
     will-change: transform, opacity;
 }
 
@@ -426,13 +405,6 @@
             rotate(var(--stroke-rotate))
             scaleX(calc(0.72 + var(--stroke-level) * 0.54));
     transform-origin: center;
-    transition:
-            width 160ms linear,
-            height 160ms linear,
-            opacity 180ms ease,
-            transform 160ms linear,
-            background 520ms ease,
-            box-shadow 220ms ease;
     animation: voice-field-stroke-drift 8s ease-in-out infinite;
     animation-delay: var(--stroke-delay);
     will-change: transform, opacity;
