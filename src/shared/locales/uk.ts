@@ -460,7 +460,6 @@ export const uk = {
             immersiveMode: 'Режим занурення',
             immersiveTitle: 'Режим занурення',
             immersiveKicker: 'Повноекранне прослуховування',
-            immersiveSceneKicker: 'Голос залишає слід',
             immersiveNow: 'зараз звучить',
             immersiveSeek: 'Перемотати аудіо',
             textTitle: 'Текст',

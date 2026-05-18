@@ -104,8 +104,7 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    translate: -50% -50%;
-    transform: rotate(-90deg);
+    transform: translate(-50%, -50%) rotate(-90deg);
     background:
         linear-gradient(90deg,
             var(--color-primary) 0,
