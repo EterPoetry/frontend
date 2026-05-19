@@ -11,6 +11,7 @@ body {
 :root {
     --color-bg-page: #f0ebe1;
     --color-bg-card: #f7f3ec;
+    --color-bg-card-elevated: #ffffff;
     --color-bg-card-soft: rgba(247, 243, 236, 0.8);
     --color-bg-card-strong: rgba(255, 251, 244, 0.9);
     --color-bg-card-muted: rgba(243, 234, 219, 0.5);
@@ -44,6 +45,7 @@ body {
 :root[data-theme='dark'] {
     --color-bg-page: #171311;
     --color-bg-card: #211a17;
+    --color-bg-card-elevated: #2e2421;
     --color-bg-card-soft: rgba(33, 26, 23, 0.84);
     --color-bg-card-strong: rgba(42, 33, 29, 0.96);
     --color-bg-card-muted: rgba(54, 42, 35, 0.72);

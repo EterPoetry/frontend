@@ -589,6 +589,7 @@ export const usePostsStore = defineStore('posts', {
         },
 
         applyPostLikeState(postId: number, isLiked: boolean, likesCount?: number): void {
+            rememberPostLikeState(postId, isLiked);
             this.popularPosts = updatePostLikeInList(this.popularPosts, postId, isLiked, likesCount);
             this.subscriptionsPosts = updatePostLikeInList(this.subscriptionsPosts, postId, isLiked, likesCount);
             this.searchFeedPosts = updatePostLikeInList(this.searchFeedPosts, postId, isLiked, likesCount);

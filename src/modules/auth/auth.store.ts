@@ -7,6 +7,7 @@ import { AuthState } from '@/modules/auth/interfaces/auth-state.interface';
 import { AuthData } from '@/modules/auth/interfaces/auth-data.interface';
 import { User } from '@/modules/auth/interfaces/user.interface';
 import { usePaymentsStore } from '@/modules/payments/payments.store';
+import { useNotificationsStore } from '@/modules/notifications/notifications.store';
 import { isTokenExpired } from '@/shared/utils/jwt.utils';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 
@@ -109,7 +110,10 @@ export const useAuthStore = defineStore('auth', {
 
         async logout(): Promise<void> {
             try {
-                if (this.token) await api.post('/auth/logout');
+                if (this.token) {
+                    await useNotificationsStore().removeCurrentBrowserPushSubscription().catch(() => false);
+                    await api.post('/auth/logout');
+                }
             } catch (error) {
                 console.error(error);
             } finally {

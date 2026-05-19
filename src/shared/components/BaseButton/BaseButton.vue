@@ -10,6 +10,7 @@ defineSlots<{
 
 const props = withDefaults(defineProps<BaseButtonProperties>(), {
   isLoading: false,
+  iconOnly: false,
 });
 </script>
 
@@ -19,10 +20,12 @@ const props = withDefaults(defineProps<BaseButtonProperties>(), {
       class="btn"
       :class="[
         props.variant === 'secondary' ? 'btn-secondary' : 'btn-primary',
+        { 'btn-icon-only': props.iconOnly },
         { 'btn-loading': props.isLoading },
       ]"
       :disabled="props.disabled || props.isLoading"
       :aria-busy="props.isLoading"
+      :aria-label="props.iconOnly ? props.label : undefined"
   >
     <slot v-if="!props.isLoading" name="icon"></slot>
     <BaseLoader
@@ -31,6 +34,6 @@ const props = withDefaults(defineProps<BaseButtonProperties>(), {
         variant="spin"
         :tone="props.variant === 'secondary' ? 'primary' : 'light'"
     />
-    <span>{{ props.label }}</span>
+    <span v-if="!props.iconOnly">{{ props.label }}</span>
   </button>
 </template>

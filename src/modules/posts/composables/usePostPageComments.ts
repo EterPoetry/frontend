@@ -4,6 +4,7 @@ import { useAuthStore } from '@/modules/auth/auth.store';
 import {
     COMMENTS_FOCUS_EVENT,
     COMMENTS_FOCUS_QUERY_TARGET,
+    COMMENTS_LOAD_MORE_ROOT_MARGIN,
     COMMENTS_PAGE_LIMIT,
     REPLIES_PAGE_LIMIT,
 } from '@/modules/posts/constants/post-comments.constants';
@@ -40,6 +41,7 @@ export const usePostPageComments = ({
     const route = useRoute();
 
     const isLoadingComments = ref(false);
+    const isLoadingMoreComments = ref(false);
     const commentsSort = ref<CommentSortOrder>(CommentSortOrder.NEWEST);
     const pendingDeleteComment = ref<PostComment | null>(null);
     const isSubmittingComment = ref(false);
@@ -52,9 +54,11 @@ export const usePostPageComments = ({
     const likePendingCommentIds = ref<number[]>([]);
     const deletingCommentIds = ref<number[]>([]);
     const commentsSectionElement = ref<HTMLElement | null>(null);
+    const loadMoreCommentsTrigger = ref<HTMLElement | null>(null);
     const rootCommentInputElement = ref<BaseFieldHandle | null>(null);
     const isCommentsFocusPending = ref(false);
     const isMobileCommentsSheetOpen = ref(false);
+    let commentsObserver: IntersectionObserver | null = null;
 
     const openCommentsSheet = (): void => {
         isMobileCommentsSheetOpen.value = true;
@@ -177,6 +181,12 @@ export const usePostPageComments = ({
         if (reset) {
             isLoadingComments.value = true;
             commentsErrorMessage.value = '';
+        } else {
+            if (isLoadingComments.value || isLoadingMoreComments.value || !postsStore.commentsHasMore) {
+                return;
+            }
+
+            isLoadingMoreComments.value = true;
         }
 
         try {
@@ -188,7 +198,32 @@ export const usePostPageComments = ({
         } catch {
             commentsErrorMessage.value = uk.posts.details.commentsLoadFailed;
         } finally {
-            isLoadingComments.value = false;
+            if (reset) {
+                isLoadingComments.value = false;
+                return;
+            }
+
+            isLoadingMoreComments.value = false;
+        }
+    };
+
+    const setupCommentsObserver = (): void => {
+        commentsObserver?.disconnect();
+
+        commentsObserver = new IntersectionObserver((entries) => {
+            const [entry] = entries;
+
+            if (!entry?.isIntersecting) {
+                return;
+            }
+
+            void loadComments(false);
+        }, {
+            rootMargin: COMMENTS_LOAD_MORE_ROOT_MARGIN,
+        });
+
+        if (loadMoreCommentsTrigger.value) {
+            commentsObserver.observe(loadMoreCommentsTrigger.value);
         }
     };
 
@@ -403,16 +438,23 @@ export const usePostPageComments = ({
         }
     });
 
+    watch(loadMoreCommentsTrigger, () => {
+        setupCommentsObserver();
+    });
+
     onMounted(() => {
         window.addEventListener(COMMENTS_FOCUS_EVENT, handleCommentsFocusEvent as EventListener);
+        setupCommentsObserver();
     });
 
     onBeforeUnmount(() => {
         window.removeEventListener(COMMENTS_FOCUS_EVENT, handleCommentsFocusEvent as EventListener);
+        commentsObserver?.disconnect();
     });
 
     return {
         isLoadingComments,
+        isLoadingMoreComments,
         commentsSort,
         pendingDeleteComment,
         isSubmittingComment,
@@ -425,6 +467,7 @@ export const usePostPageComments = ({
         likePendingCommentIds,
         deletingCommentIds,
         commentsSectionElement,
+        loadMoreCommentsTrigger,
         rootCommentInputElement,
         isCommentsFocusPending,
         isMobileCommentsSheetOpen,

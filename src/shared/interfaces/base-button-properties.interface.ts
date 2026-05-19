@@ -4,4 +4,5 @@ export interface BaseButtonProperties {
     variant: 'primary' | 'secondary';
     disabled: boolean;
     isLoading?: boolean;
+    iconOnly?: boolean;
 }

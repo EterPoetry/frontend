@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
+import { NotificationRouteNames } from '@/modules/notifications/enums/notification-route-names.enum';
 import { PaymentsRouteNames } from '@/modules/payments/enums/payments-route-names.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
@@ -58,6 +59,12 @@ const routes: Array<RouteRecordRaw> = [
         name: PostRouteNames.FAVORITES,
         component: () => import('@/modules/posts/pages/PostsFeedPage/PostsFeedPage.vue'),
         meta: { requiresAuth: true, searchEnabled: true, feedKind: 'favorites', ...SEO_ROUTES.favorites }
+    },
+    {
+        path: '/notifications',
+        name: NotificationRouteNames.NOTIFICATIONS,
+        component: () => import('@/modules/notifications/pages/NotificationsPage/NotificationsPage.vue'),
+        meta: { requiresAuth: true, title: uk.notifications.title, ...noIndexMeta }
     },
     {
         path: '/payments/return',

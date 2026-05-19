@@ -36,6 +36,7 @@ import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import AppShell from '@/shared/components/AppShell/AppShell.vue';
 import BaseBottomSheet from '@/shared/components/BaseBottomSheet/BaseBottomSheet.vue';
 import BaseField from '@/shared/components/BaseField/BaseField.vue';
+import BaseLoader from '@/shared/components/BaseLoader/BaseLoader.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog.vue';
 import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert.vue';
 import ProfileIdentity from '@/shared/components/ProfileIdentity/ProfileIdentity.vue';
@@ -255,6 +256,10 @@ const setCommentsSectionElement = (element: Element | unknown): void => {
     commentsController.commentsSectionElement.value = element instanceof HTMLElement ? element : null;
 };
 
+const setLoadMoreCommentsTrigger = (element: Element | unknown): void => {
+    commentsController.loadMoreCommentsTrigger.value = element instanceof HTMLElement ? element : null;
+};
+
 const setRootCommentInputElement = (element: unknown): void => {
     commentsController.rootCommentInputElement.value = element as typeof commentsController.rootCommentInputElement.value;
 };
@@ -302,6 +307,7 @@ const commentsController = usePostPageComments({
 
 const {
     isLoadingComments,
+    isLoadingMoreComments,
     commentsSort,
     pendingDeleteComment,
     isSubmittingComment,
@@ -1159,14 +1165,20 @@ watch([isMobileCommentsSheetOpen, isImmersiveModeOpen, isMobileViewport], ([isCo
               </article>
             </div>
 
-            <button
+            <div
                 v-if="postsStore.commentsHasMore"
-                type="button"
-                class="post-page__load-more"
-                @click="loadComments(false)"
+                :ref="setLoadMoreCommentsTrigger"
+                class="post-page__comments-load-more"
+                aria-hidden="true"
             >
-              {{ uk.home.popularFeed.loadingMore }}
-            </button>
+              <BaseLoader
+                  v-if="isLoadingMoreComments"
+                  :label="uk.home.popularFeed.loadingMore"
+                  size="sm"
+                  tone="primary"
+                  centered
+              />
+            </div>
             </div>
 
             <div v-if="isCommentsAvailable" class="post-page__comment-composer">

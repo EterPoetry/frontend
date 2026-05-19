@@ -6,4 +6,8 @@ export interface PublicConfig {
     subscription: {
         priceUsd: number;
     };
+    notifications?: {
+        webPushEnabled: boolean;
+        webPushPublicKey: string;
+    };
 }

@@ -817,6 +817,11 @@
     color: var(--color-primary);
 }
 
+.post-page__comments-load-more {
+    min-height: 24px;
+    margin-top: 14px;
+}
+
 .post-page__sync-btn {
     min-height: 34px;
     padding: 7px 12px;

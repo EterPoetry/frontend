@@ -334,12 +334,11 @@ export const useSubscriptionDialog = (
 
         if (relevantTransaction
             && (relevantTransaction.status === 'failure'
-                || relevantTransaction.status === 'expired'
-                || relevantTransaction.status === 'reversed')) {
+                || relevantTransaction.status === 'expired')) {
             return 'failure';
         }
 
-        if (relevantTransaction?.status === 'success') {
+        if (relevantTransaction?.status === 'success' || relevantTransaction?.status === 'reversed') {
             return 'success';
         }
 

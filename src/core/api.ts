@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import router from '@/core/router';
+import { isTokenExpired } from '@/shared/utils/jwt.utils';
 
 interface CustomRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
@@ -14,14 +15,31 @@ const api = axios.create({
     },
 });
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+let pendingRefresh: Promise<{ accessToken: string }> | null = null;
+
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('token');
     const isAuthPath = config.url?.includes('/auth/login')
         || config.url?.includes('/auth/refresh')
         || config.url?.includes('/auth/reset-password');
 
-    if (token && config.headers && !isAuthPath) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (token && !isAuthPath && isTokenExpired(token)) {
+        if (!pendingRefresh) {
+            const authStore = useAuthStore();
+            pendingRefresh = authStore.refresh().finally(() => {
+                pendingRefresh = null;
+            });
+        }
+        try {
+            await pendingRefresh;
+        } catch {
+            // Refresh failed — proceed with expired token; 401 handler will log out
+        }
+    }
+
+    const activeToken = localStorage.getItem('token');
+    if (activeToken && config.headers && !isAuthPath) {
+        config.headers.Authorization = `Bearer ${activeToken}`;
     }
 
     if (config.data instanceof FormData) {
