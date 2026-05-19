@@ -133,8 +133,7 @@ export const useSubscriptionDialog = (
     const shouldShowManagement = computed(() => isActive.value || isPastDue.value);
     const activeReturnAction = computed<PaymentReturnAction | null>(() => returnAction.value ?? null);
     const isCardLoading = computed(() => (
-        activeReturnAction.value === 'update_card'
-        && isActive.value
+        isActive.value
         && !subscription.value?.card
         && reconciliationStatus.value !== 'failure'
     ));
