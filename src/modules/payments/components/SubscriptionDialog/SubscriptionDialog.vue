@@ -23,6 +23,7 @@ const {
     canLoadMoreTransactions,
     canOpenTransactionsDialog,
     canUpdateCard,
+    isCardLoading,
     closeDialog,
     closeTransactionsDialog,
     currentViewClassName,
@@ -168,11 +169,15 @@ const {
                   variant="secondary"
                   :disabled="false"
                   :is-loading="isCardUpdateSubmitting"
-                  @click="handleCardUpdate"
+                @click="handleCardUpdate"
               />
             </div>
 
-            <div v-if="subscription?.card" class="subscription-dialog__card-row">
+            <div v-if="isCardLoading" class="subscription-dialog__card-row">
+              <BaseLoader :label="uk.common.labels.loading" size="sm" tone="primary" variant="wave" centered />
+            </div>
+
+            <div v-else-if="subscription?.card" class="subscription-dialog__card-row">
               <span class="subscription-dialog__card-brand">{{ subscription.card.paymentSystem }}</span>
               <span class="subscription-dialog__card-number">{{ subscription.card.maskedNumber }}</span>
             </div>

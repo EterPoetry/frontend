@@ -24,6 +24,7 @@ export interface UseSubscriptionDialogResult {
     canLoadMoreTransactions: ComputedRef<boolean>;
     canOpenTransactionsDialog: ComputedRef<boolean>;
     canUpdateCard: ComputedRef<boolean>;
+    isCardLoading: ComputedRef<boolean>;
     closeDialog: () => void;
     closeTransactionsDialog: () => void;
     currentViewClassName: ComputedRef<string>;
@@ -131,6 +132,12 @@ export const useSubscriptionDialog = (
     const canCancel = computed(() => isActive.value || isPastDue.value);
     const shouldShowManagement = computed(() => isActive.value || isPastDue.value);
     const activeReturnAction = computed<PaymentReturnAction | null>(() => returnAction.value ?? null);
+    const isCardLoading = computed(() => (
+        activeReturnAction.value === 'update_card'
+        && isActive.value
+        && !subscription.value?.card
+        && reconciliationStatus.value !== 'failure'
+    ));
     const currentViewClassName = computed(() => {
         if (isCancelConfirmOpen.value) {
             return 'subscription-dialog__surface--confirm';
@@ -703,6 +710,7 @@ export const useSubscriptionDialog = (
         canLoadMoreTransactions,
         canOpenTransactionsDialog,
         canUpdateCard,
+        isCardLoading,
         closeDialog,
         closeTransactionsDialog,
         currentViewClassName,
