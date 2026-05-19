@@ -6,8 +6,9 @@ import { UpdateProfilePayload } from '@/modules/profile/interfaces/update-profil
 import { AuthState } from '@/modules/auth/interfaces/auth-state.interface';
 import { AuthData } from '@/modules/auth/interfaces/auth-data.interface';
 import { User } from '@/modules/auth/interfaces/user.interface';
+import { usePaymentsStore } from '@/modules/payments/payments.store';
 import { isTokenExpired } from '@/shared/utils/jwt.utils';
-import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
+import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 
 export const useAuthStore = defineStore('auth', {
     state: (): AuthState => ({
@@ -18,6 +19,7 @@ export const useAuthStore = defineStore('auth', {
 
     getters: {
         isAuthenticated: (state): boolean => !!state.token,
+        isPremium: (): boolean => usePaymentsStore().isPremium,
         isVerified: (state): boolean => state.user?.isEmailVerified ?? false,
         isTokenExpired: (state): boolean => isTokenExpired(state.token)
     },

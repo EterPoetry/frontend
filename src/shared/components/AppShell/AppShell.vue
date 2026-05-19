@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import SubscriptionDialog from '@/modules/payments/components/SubscriptionDialog/SubscriptionDialog.vue';
 import { useRoute } from 'vue-router';
 import StickyPostPlayer from '@/modules/posts/components/StickyPostPlayer/StickyPostPlayer.vue';
 import { usePostPlayer } from '@/modules/posts/composables/usePostPlayer';
@@ -19,6 +20,7 @@ const props = defineProps<{
 const search = defineModel<string>('search', { default: '' });
 const sortBy = defineModel<string>('sortBy', { default: 'newest' });
 const categoryId = defineModel<number | null>('categoryId', { default: null });
+const subscriptionDialogOpen = defineModel<boolean>('subscriptionDialogOpen', { default: false });
 const route = useRoute();
 const player = usePostPlayer();
 const shouldShowStickyPlayer = computed(() => player.hasActivePost.value && !props.hideStickyPlayer);
@@ -51,7 +53,12 @@ defineEmits<{
     />
 
     <div class="app-shell__main">
-      <AppHeader v-model:search="search" v-model:sort-by="sortBy" v-model:category-id="categoryId" />
+      <AppHeader
+          v-model:search="search"
+          v-model:sort-by="sortBy"
+          v-model:category-id="categoryId"
+          v-model:subscription-dialog-open="subscriptionDialogOpen"
+      />
       <main class="app-shell__content">
         <slot />
       </main>
@@ -68,5 +75,7 @@ defineEmits<{
         :like-pending-post-ids="likePendingPostIds"
         @like-toggle="$emit('like-toggle', $event)"
     />
+
+    <SubscriptionDialog :is-open="subscriptionDialogOpen" @close="subscriptionDialogOpen = false" />
   </div>
 </template>

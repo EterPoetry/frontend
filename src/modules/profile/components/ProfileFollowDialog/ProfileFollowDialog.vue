@@ -5,7 +5,7 @@ import searchIconUrl from '@/shared/assets/icons/ui/search.svg';
 import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import type { ProfileFollowListItem } from '@/modules/profile/interfaces/profile-follow-list-item.interface';
 import { uk } from '@/shared/locales/uk';
-import ProfileDialogShell from '@/modules/profile/components/ProfileDialogShell/ProfileDialogShell.vue';
+import AppDialogShell from '@/shared/components/AppDialogShell/AppDialogShell.vue';
 import './ProfileFollowDialog.css';
 
 const props = defineProps<{
@@ -34,7 +34,7 @@ const isPending = (userId: number): boolean => props.pendingUserIds.includes(use
 </script>
 
 <template>
-  <ProfileDialogShell :is-open="isOpen" :title="title" :subtitle="subtitle" size="lg" @close="$emit('close')">
+  <AppDialogShell :is-open="isOpen" :title="title" :subtitle="subtitle" size="lg" @close="$emit('close')">
     <div class="profile-follow-dialog">
       <label class="profile-follow-dialog__search">
         <img :src="searchIconUrl" alt="" class="profile-follow-dialog__search-icon" />
@@ -118,5 +118,5 @@ const isPending = (userId: number): boolean => props.pendingUserIds.includes(use
         </div>
       </div>
     </div>
-  </ProfileDialogShell>
+  </AppDialogShell>
 </template>

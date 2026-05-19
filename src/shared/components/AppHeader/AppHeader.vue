@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useAuthStore } from '@/modules/auth/auth.store';
 import { useRoute } from 'vue-router';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import searchIconUrl from '@/shared/assets/icons/ui/search.svg';
@@ -18,9 +19,14 @@ const search = defineModel<string>('search', { default: '' });
 const sortBy = defineModel<string>('sortBy', { default: 'newest' });
 const categoryId = defineModel<number | null>('categoryId', { default: null });
 
+const authStore = useAuthStore();
 const { theme, toggleTheme } = useTheme();
 const route = useRoute();
 const isSearchEnabled = computed(() => route.meta.searchEnabled === true);
+const isSubscriptionDialogOpen = defineModel<boolean>('subscriptionDialogOpen', { default: false });
+const subscriptionButtonLabel = computed(() => authStore.isPremium
+    ? uk.payments.header.manageLabel
+    : uk.home.subscribeLabel);
 const headerControls = useAppHeaderControls({
     search,
     categoryId,
@@ -161,10 +167,11 @@ const {
 
     <div class="app-header__actions">
       <BaseButton
-          :label="uk.home.subscribeLabel"
+          :label="subscriptionButtonLabel"
           type="button"
           variant="primary"
           :disabled="false"
+          @click="isSubscriptionDialogOpen = true"
       />
 
       <button type="button" class="app-header__icon-btn" :aria-label="uk.home.notificationsLabel">

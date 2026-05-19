@@ -3,7 +3,7 @@ import infoCircleIconUrl from '@/shared/assets/icons/ui/info-circle.svg';
 import shieldAlertIconUrl from '@/shared/assets/icons/ui/shield-alert.svg';
 import type { ActiveViolationResponse } from '@/modules/profile/interfaces/active-violation-response.interface';
 import { uk } from '@/shared/locales/uk';
-import ProfileDialogShell from '@/modules/profile/components/ProfileDialogShell/ProfileDialogShell.vue';
+import AppDialogShell from '@/shared/components/AppDialogShell/AppDialogShell.vue';
 import './ProfileViolationsDialog.css';
 
 defineProps<{
@@ -26,7 +26,7 @@ defineEmits<{
 </script>
 
 <template>
-  <ProfileDialogShell :is-open="isOpen" :title="title" :subtitle="subtitle" size="lg" @close="$emit('close')">
+  <AppDialogShell :is-open="isOpen" :title="title" :subtitle="subtitle" size="lg" @close="$emit('close')">
     <div class="profile-violations-dialog">
       <section class="profile-violations-dialog__summary">
         <div class="profile-violations-dialog__summary-main">
@@ -116,5 +116,5 @@ defineEmits<{
         <p>{{ uk.profile.notices.violationsExpire }}</p>
       </section>
     </div>
-  </ProfileDialogShell>
+  </AppDialogShell>
 </template>

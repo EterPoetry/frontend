@@ -100,7 +100,7 @@ const accessError = computed<string | null>(() => {
     if (!post.value) return null;
     const isOwn = authStore.user?.userId === post.value.authorId;
     if (!isOwn) return uk.posts.sync.accessDenied;
-    if (!authStore.user?.isPremium) return uk.posts.sync.accessDenied;
+    if (!authStore.isPremium) return uk.posts.sync.accessDenied;
     if (post.value.status === PostStatus.PROCESSING) return uk.posts.sync.processingPost;
     if (!post.value.text?.trim()) return uk.posts.sync.noText;
     if (!post.value.audioFileUrl) return uk.posts.sync.noAudio;

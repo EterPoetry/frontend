@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { isRouteNavigating } from '@/core/navigation-loading';
+import { usePaymentsRuntime } from '@/modules/payments/composables/usePaymentsRuntime';
+
+usePaymentsRuntime();
 </script>
 
 <template>
@@ -66,16 +69,6 @@ import { isRouteNavigating } from '@/core/navigation-loading';
 .app-route-loader__bar:nth-child(5) { height: 34px; animation-delay: 0.32s; }
 .app-route-loader__bar:nth-child(6) { height: 22px; animation-delay: 0.40s; }
 .app-route-loader__bar:nth-child(7) { height: 12px; animation-delay: 0.48s; }
-
-.app-route-loader-enter-active,
-.app-route-loader-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.app-route-loader-enter-from,
-.app-route-loader-leave-to {
-  opacity: 0;
-}
 
 @keyframes app-loader-wave {
   0%, 100% { transform: scaleY(0.5); opacity: 0.4; }

@@ -46,7 +46,7 @@ export const usePostsAppShell = () => {
             return DEFAULT_FREE_DURATION_LIMIT_MINUTES;
         }
 
-        return authStore.user?.isPremium
+        return authStore.isPremium
             ? recordingConfig.premiumDurationLimitMinutes
             : recordingConfig.freeDurationLimitMinutes;
     });

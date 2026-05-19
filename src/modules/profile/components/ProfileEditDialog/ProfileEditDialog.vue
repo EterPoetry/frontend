@@ -8,7 +8,7 @@ import { validateProfileLink } from '@/shared/utils/profile-link.utils';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import BaseField from '@/shared/components/BaseField/BaseField.vue';
 import type { ProfileResponse } from '@/modules/profile/interfaces/profile-response.interface';
-import ProfileDialogShell from '@/modules/profile/components/ProfileDialogShell/ProfileDialogShell.vue';
+import AppDialogShell from '@/shared/components/AppDialogShell/AppDialogShell.vue';
 import { uk } from '@/shared/locales/uk';
 import uploadIconUrl from '@/shared/assets/icons/ui/upload.svg';
 import closeIconUrl from '@/shared/assets/icons/ui/close.svg';
@@ -151,7 +151,7 @@ watch(() => props.profile, () => {
 </script>
 
 <template>
-  <ProfileDialogShell
+  <AppDialogShell
       :is-open="isOpen"
       :title="uk.profile.editDialog.title"
       :subtitle="uk.profile.editDialog.subtitle"
@@ -282,5 +282,5 @@ watch(() => props.profile, () => {
         />
       </div>
     </form>
-  </ProfileDialogShell>
+  </AppDialogShell>
 </template>

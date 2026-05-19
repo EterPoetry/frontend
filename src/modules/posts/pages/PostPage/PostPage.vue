@@ -78,6 +78,7 @@ const {
 const isLoadingPost = ref(false);
 const isDeletingPost = ref(false);
 const isDeletePostDialogOpen = ref(false);
+const isSubscriptionDialogOpen = ref(false);
 const postErrorMessage = ref('');
 const likePendingPostIds = ref<number[]>([]);
 const isProfileLoading = ref(false);
@@ -184,7 +185,6 @@ const trailingSilenceStartMs = computed<number | null>(() => {
 });
 const canManageSynchronization = computed(() => !!activePost.value
     && isOwnPost.value
-    && !!authStore.user?.isPremium
     && activePost.value.status !== PostStatus.PROCESSING
     && !!activePost.value.text?.trim());
 
@@ -581,6 +581,11 @@ const openSynchronizationManager = async (): Promise<void> => {
         return;
     }
 
+    if (!authStore.isPremium) {
+        isSubscriptionDialogOpen.value = true;
+        return;
+    }
+
     await router.push({
         name: PostRouteNames.SYNC_POST,
         params: { postId: activePost.value.postId },
@@ -684,6 +689,7 @@ watch([isMobileCommentsSheetOpen, isImmersiveModeOpen, isMobileViewport], ([isCo
 <template>
   <AppShell
       v-model:search="search"
+      v-model:subscription-dialog-open="isSubscriptionDialogOpen"
       :is-authenticated="isAuthenticated"
       :like-pending-post-ids="likePendingPostIds"
       @create="handleCreateClick"

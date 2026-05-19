@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
+import { useBodyScrollLock } from '@/shared/composables/useBodyScrollLock';
 import './ConfirmDialog.css';
 
 withDefaults(defineProps<{
@@ -8,6 +9,8 @@ withDefaults(defineProps<{
     confirmLabel: string;
     cancelLabel: string;
 }>(), {});
+
+useBodyScrollLock(true);
 
 const emit = defineEmits<{
     (e: 'confirm'): void;

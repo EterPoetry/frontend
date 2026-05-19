@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
+import { PaymentsRouteNames } from '@/modules/payments/enums/payments-route-names.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
 import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.enum';
 import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
@@ -57,6 +58,12 @@ const routes: Array<RouteRecordRaw> = [
         name: PostRouteNames.FAVORITES,
         component: () => import('@/modules/posts/pages/PostsFeedPage/PostsFeedPage.vue'),
         meta: { requiresAuth: true, searchEnabled: true, feedKind: 'favorites', ...SEO_ROUTES.favorites }
+    },
+    {
+        path: '/payments/return',
+        name: PaymentsRouteNames.RETURN,
+        component: () => import('@/modules/payments/pages/PaymentsReturnPage/PaymentsReturnPage.vue'),
+        meta: { isPublic: true, title: uk.payments.dialog.manageTitle, ...noIndexMeta }
     },
     {
         path: '/profile',

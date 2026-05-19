@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { useBodyScrollLock } from '@/shared/composables/useBodyScrollLock';
 import './BaseBottomSheet.css';
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
     enabled?: boolean;
     isOpen?: boolean;
     closeAriaLabel?: string;
@@ -10,6 +11,8 @@ withDefaults(defineProps<{
     isOpen: false,
     closeAriaLabel: 'Close',
 });
+
+useBodyScrollLock(() => props.enabled && props.isOpen);
 
 const emit = defineEmits<{
     (e: 'close'): void;

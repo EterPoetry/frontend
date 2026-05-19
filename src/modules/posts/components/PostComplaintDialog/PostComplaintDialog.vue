@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import checkIconUrl from '@/shared/assets/icons/ui/check.svg';
-import ProfileDialogShell from '@/modules/profile/components/ProfileDialogShell/ProfileDialogShell.vue';
+import AppDialogShell from '@/shared/components/AppDialogShell/AppDialogShell.vue';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import type { ComplaintReasonItem } from '@/modules/profile/interfaces/complaint-reason-item.interface';
 import { uk } from '@/shared/locales/uk';
@@ -37,7 +37,7 @@ const handleSubmit = (): void => {
 </script>
 
 <template>
-  <ProfileDialogShell
+  <AppDialogShell
       :is-open="isOpen"
       :title="uk.posts.complaint.title"
       @close="$emit('close')"
@@ -104,5 +104,5 @@ const handleSubmit = (): void => {
         </template>
       </template>
     </div>
-  </ProfileDialogShell>
+  </AppDialogShell>
 </template>
