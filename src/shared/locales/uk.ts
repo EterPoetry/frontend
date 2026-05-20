@@ -286,7 +286,6 @@ export const uk = {
             unread: 'Непрочитані',
             comments: 'Коментарі',
             follows: 'Підписки',
-            mentions: 'Згадки',
         },
         browserPush: {
             eyebrow: 'Налаштування',

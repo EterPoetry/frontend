@@ -1,1 +1,1 @@
-export type NotificationFeedFilter = 'all' | 'unread' | 'comments' | 'follows' | 'mentions' | 'likes' | 'system';
+export type NotificationFeedFilter = 'all' | 'unread' | 'comments' | 'follows' | 'likes' | 'system';

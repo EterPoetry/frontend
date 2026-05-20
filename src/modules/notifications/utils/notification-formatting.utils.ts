@@ -74,10 +74,6 @@ export const getNotificationFilterLabel = (filter: NotificationFeedFilter): stri
         return uk.notifications.filters.follows;
     }
 
-    if (filter === 'mentions') {
-        return uk.notifications.filters.mentions;
-    }
-
     return uk.notifications.filters.all;
 };
 
@@ -138,10 +134,6 @@ export const getFilterQueryParams = (filter: NotificationFeedFilter): Pick<Notif
 
     if (filter === 'follows') {
         return { type: 'follows' };
-    }
-
-    if (filter === 'mentions') {
-        return { type: 'mentions' };
     }
 
     if (filter === 'likes') {

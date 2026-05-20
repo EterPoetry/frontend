@@ -79,7 +79,7 @@ export const useNotificationsPage = () => {
         return uk.notifications.browserPush.descriptionDisabled;
     });
     const filters = computed<Array<{ value: NotificationFeedFilter; label: string }>>(() => (
-        (['all', 'unread', 'comments', 'follows', 'mentions'] as NotificationFeedFilter[]).map((value) => ({
+        (['all', 'unread', 'comments', 'follows'] as NotificationFeedFilter[]).map((value) => ({
             value,
             label: getNotificationFilterLabel(value),
         }))
