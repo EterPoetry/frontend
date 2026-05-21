@@ -8,6 +8,7 @@ import { ProfileRouteNames } from '@/modules/profile/enums/profile-route-names.e
 import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import { uk } from '@/shared/locales/uk';
 import { updateSeoMeta } from '@/core/seo';
+import { trackPageView } from '@/core/analytics';
 import { SEO_ROUTES } from '@/shared/constants/seo.constants';
 import { isRouteNavigating } from '@/core/navigation-loading';
 
@@ -144,6 +145,7 @@ const router = createRouter({
 router.afterEach((to) => {
     isRouteNavigating.value = false;
     updateSeoMeta(to);
+    trackPageView(to);
 });
 
 router.onError(() => {
