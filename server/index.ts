@@ -38,6 +38,10 @@ const requireEnv = (name) => {
     return value;
 };
 
+const getOptionalEnv = (name) => {
+    return process.env[name]?.trim() || '';
+};
+
 const requireNumberEnv = (name) => {
     const value = Number(requireEnv(name));
 
@@ -74,6 +78,7 @@ const postMetaPathTemplate = requireEnv('META_POST_PATH');
 const profileMetaPathTemplate = requireEnv('META_PROFILE_PATH');
 const cacheTtlMs = requireNumberEnv('META_CACHE_TTL_MS');
 const metaApiTimeoutMs = requireNumberEnv('META_API_TIMEOUT_MS');
+const googleAnalyticsMeasurementId = getOptionalEnv('GA_MEASUREMENT_ID');
 
 const defaultMeta = {
     title: 'Eter — аудіопоезія українською',
@@ -447,6 +452,23 @@ const renderAppHtml = (meta, options: RenderOptions = {}) => {
     return '<div id="app"></div>';
 };
 
+const renderAnalyticsTags = () => {
+    if (!googleAnalyticsMeasurementId) {
+        return '';
+    }
+
+    return [
+        `<script async src="https://www.googletagmanager.com/gtag/js?id=${escapeHtml(googleAnalyticsMeasurementId)}"></script>`,
+        '<script>',
+        '  window.dataLayer = window.dataLayer || [];',
+        '  window.gtag = window.gtag || function(){dataLayer.push(arguments);};',
+        '  window.__ETER_GA_MEASUREMENT_ID__ = ' + JSON.stringify(googleAnalyticsMeasurementId) + ';',
+        "  window.gtag('js', new Date());",
+        `  window.gtag('config', ${JSON.stringify(googleAnalyticsMeasurementId)}, { send_page_view: false });`,
+        '</script>',
+    ].join('\n    ');
+};
+
 const renderIndexWithMeta = async (meta, routePath = '/', options: RenderOptions = {}) => {
     const template = await getIndexTemplate();
     const replacements = {
@@ -464,6 +486,7 @@ const renderIndexWithMeta = async (meta, routePath = '/', options: RenderOptions
         __META_URL__: meta.url,
         __META_CANONICAL__: meta.canonical,
         __META_ROBOTS__: meta.robots,
+        __ANALYTICS_TAGS__: renderAnalyticsTags(),
         __APP_HTML__: renderAppHtml(meta, options),
     };
 
@@ -473,6 +496,7 @@ const renderIndexWithMeta = async (meta, routePath = '/', options: RenderOptions
             token === '__META_AUDIO_TAGS__'
                 || token === '__META_ARTICLE_TAGS__'
                 || token === '__META_STRUCTURED_DATA__'
+                || token === '__ANALYTICS_TAGS__'
                 || token === '__APP_HTML__'
                 ? value
                 : escapeHtml(value),
