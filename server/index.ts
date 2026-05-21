@@ -489,8 +489,9 @@ const renderIndexWithMeta = async (meta, routePath = '/', options: RenderOptions
         __ANALYTICS_TAGS__: renderAnalyticsTags(),
         __APP_HTML__: renderAppHtml(meta, options),
     };
+    const analyticsTags = replacements.__ANALYTICS_TAGS__;
 
-    const html = Object.entries(replacements).reduce(
+    const htmlWithReplacements = Object.entries(replacements).reduce(
         (html, [token, value]) => html.replaceAll(
             token,
             token === '__META_AUDIO_TAGS__'
@@ -503,6 +504,9 @@ const renderIndexWithMeta = async (meta, routePath = '/', options: RenderOptions
         ),
         template,
     );
+    const html = analyticsTags && !htmlWithReplacements.includes(analyticsTags) && htmlWithReplacements.includes('</head>')
+        ? htmlWithReplacements.replace('</head>', `${analyticsTags}\n</head>`)
+        : htmlWithReplacements;
 
     if (isDevelopment && viteDevServer) {
         return viteDevServer.transformIndexHtml(routePath, html);
