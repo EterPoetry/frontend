@@ -114,6 +114,7 @@ jobs:
             test -f .env || (echo ".env file is required in ${{ secrets.DEPLOY_PATH }}" && exit 1)
             grep -q '^PORT=' .env || (echo ".env must contain PORT" && exit 1)
             grep -q '^SITE_URL=' .env || (echo ".env must contain SITE_URL" && exit 1)
+            grep -q '^GA_MEASUREMENT_ID=' .env || (echo ".env must contain GA_MEASUREMENT_ID" && exit 1)
             grep -q '^META_API_BASE_URL=' .env || (echo ".env must contain META_API_BASE_URL" && exit 1)
             grep -q '^META_POST_PATH=' .env || (echo ".env must contain META_POST_PATH" && exit 1)
             grep -q '^META_PROFILE_PATH=' .env || (echo ".env must contain META_PROFILE_PATH" && exit 1)

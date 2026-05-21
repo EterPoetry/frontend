@@ -3,13 +3,7 @@ services:
     image: ${APP_IMAGE}
     container_name: eter-frontend
     restart: unless-stopped
-    environment:
-      PORT: ${PORT}
-      SITE_URL: ${SITE_URL}
-      META_API_BASE_URL: ${META_API_BASE_URL}
-      META_POST_PATH: ${META_POST_PATH}
-      META_PROFILE_PATH: ${META_PROFILE_PATH}
-      META_CACHE_TTL_MS: ${META_CACHE_TTL_MS}
-      META_API_TIMEOUT_MS: ${META_API_TIMEOUT_MS}
+    env_file:
+      - .env
     ports:
       - "127.0.0.1:8081:${PORT}"
