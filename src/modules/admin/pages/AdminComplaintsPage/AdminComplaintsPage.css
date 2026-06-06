@@ -1,0 +1,242 @@
+.admin-complaints-page__table {
+    min-width: 760px;
+}
+
+.admin-complaints-page__table td {
+    vertical-align: top;
+}
+
+.admin-complaints-page__summary-cell,
+.admin-complaints-page__people-cell,
+.admin-complaints-page__status-stack {
+    gap: 4px;
+}
+
+.admin-complaints-page__row {
+    cursor: pointer;
+    outline: none;
+}
+
+.admin-complaints-page__row:hover {
+    background: color-mix(in srgb, var(--color-surface-accent) 62%, transparent);
+}
+
+.admin-complaints-page__row:focus-visible {
+    background: color-mix(in srgb, var(--color-surface-accent) 72%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 38%, transparent);
+}
+
+.admin-complaints-page__summary-cell {
+    min-width: 340px;
+}
+
+.admin-complaints-page__people-cell {
+    min-width: 220px;
+}
+
+.admin-complaints-page__date-cell {
+    min-width: 170px;
+}
+
+.admin-complaints-page__status-cell {
+    min-width: 190px;
+}
+
+.admin-complaints-page__chevron-head,
+.admin-complaints-page__chevron-cell {
+    width: 32px;
+    padding-left: 6px;
+    padding-right: 12px;
+}
+
+.admin-complaints-page__chevron-cell {
+    vertical-align: middle;
+}
+
+.admin-complaints-page__chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: 1.15rem;
+    line-height: 1;
+    transition: transform 160ms ease, color 160ms ease;
+}
+
+.admin-complaints-page__row:hover .admin-complaints-page__chevron,
+.admin-complaints-page__row:focus-visible .admin-complaints-page__chevron {
+    color: var(--color-primary);
+    transform: translateX(2px);
+}
+
+.admin-complaints-page__action-btn {
+    width: auto;
+    min-width: 0;
+}
+
+.admin-complaints-page__action-btn.btn {
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 12px;
+}
+
+.admin-complaints-page__action-btn--accept.btn-primary {
+    background: color-mix(in srgb, var(--color-primary) 78%, var(--color-bg-card-elevated));
+    color: var(--color-white);
+}
+
+.admin-complaints-page__action-btn--accept.btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 88%, var(--color-bg-card-elevated));
+}
+
+.admin-complaints-page__action-btn--decline.btn-secondary {
+    color: var(--color-text-ui);
+    border-color: color-mix(in srgb, var(--color-border) 65%, transparent);
+}
+
+.admin-complaints-page__action-btn--decline.btn-secondary:hover:not(:disabled) {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.admin-complaints-page__done {
+    color: var(--color-text-ui);
+    font-size: 0.82rem;
+}
+
+.admin-complaints-page__table-link {
+    color: var(--color-text-strong);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.admin-complaints-page__table-link:hover {
+    color: var(--color-primary);
+}
+
+.admin-complaints-page__table-link--person {
+    width: fit-content;
+}
+
+.admin-complaints-dialog {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-complaints-dialog__top {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-complaints-dialog__grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-complaints-dialog__meta {
+    display: grid;
+    gap: 14px;
+}
+
+.admin-complaints-dialog__section {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-complaints-dialog .admin-page__detail-label {
+    color: color-mix(in srgb, var(--color-text-muted) 88%, var(--color-text-strong));
+    font-size: 0.84rem;
+    font-weight: 500;
+}
+
+.admin-complaints-dialog .admin-page__detail-value {
+    text-align: left;
+    font-size: 0.96rem;
+}
+
+.admin-complaints-dialog__section--content {
+    gap: 10px;
+}
+
+.admin-complaints-dialog__content-card {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-card-elevated));
+}
+
+.admin-complaints-dialog__link {
+    color: var(--color-text-strong);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.admin-complaints-dialog__link:hover {
+    color: var(--color-primary);
+}
+
+.admin-complaints-dialog__status-area {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+}
+
+.admin-complaints-dialog__restoration-note {
+    display: inline-flex;
+    width: fit-content;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--admin-color-warning) 14%, transparent);
+    color: var(--admin-color-warning);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.admin-complaints-dialog__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.admin-complaints-page__status-stack .admin-page__status,
+.admin-complaints-dialog__status-area .admin-page__status {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 0;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+@media (max-width: 640px) {
+    .admin-complaints-page__table {
+        min-width: 640px;
+    }
+
+    .admin-page__table-wrap--cards .admin-complaints-page__table {
+        min-width: 0;
+    }
+
+    .admin-complaints-dialog__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-complaints-dialog__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-complaints-dialog__actions .admin-complaints-page__action-btn {
+        width: 100%;
+    }
+}

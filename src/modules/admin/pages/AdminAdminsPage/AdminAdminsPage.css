@@ -1,0 +1,20 @@
+.admin-admins-page__actions {
+    width: 128px;
+}
+
+.admin-admins-page__actions .btn {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 14px;
+}
+
+@media (max-width: 640px) {
+    .admin-admins-page__actions {
+        width: 100%;
+    }
+
+    .admin-admins-page__actions .btn {
+        width: 100%;
+    }
+}

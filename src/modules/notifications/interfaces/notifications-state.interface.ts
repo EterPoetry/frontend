@@ -7,4 +7,5 @@ export interface NotificationsState {
     unreadCount: number;
     unseenCount: number;
     isLoaded: boolean;
+    isRealtimeConnected: boolean;
 }

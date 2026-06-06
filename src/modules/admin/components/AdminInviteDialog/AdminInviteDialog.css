@@ -1,0 +1,27 @@
+.admin-invite-dialog {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-invite-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.admin-invite-dialog__actions .btn {
+    width: auto;
+    min-height: 44px;
+    padding: 12px 22px;
+    font-size: 15px;
+}
+
+@media (max-width: 640px) {
+    .admin-invite-dialog__actions {
+        flex-direction: column-reverse;
+    }
+
+    .admin-invite-dialog__actions .btn {
+        width: 100%;
+    }
+}

@@ -8,6 +8,7 @@ withDefaults(defineProps<{
     message: string;
     confirmLabel: string;
     cancelLabel: string;
+    isSubmitting?: boolean;
 }>(), {});
 
 useBodyScrollLock(true);
@@ -19,13 +20,20 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="confirm-dialog" @click.self="emit('close')">
-    <div class="confirm-dialog__surface" role="alertdialog" aria-modal="true" :aria-label="title">
+  <div class="confirm-dialog" @click.self="!isSubmitting && emit('close')">
+    <div class="confirm-dialog__surface" role="alertdialog" aria-modal="true" :aria-label="title" :aria-busy="isSubmitting">
       <h3 class="confirm-dialog__title">{{ title }}</h3>
       <p class="confirm-dialog__message">{{ message }}</p>
       <div class="confirm-dialog__actions">
-        <BaseButton :label="cancelLabel" type="button" variant="secondary" :disabled="false" @click="emit('close')" />
-        <BaseButton :label="confirmLabel" type="button" variant="primary" :disabled="false" @click="emit('confirm')" />
+        <BaseButton :label="cancelLabel" type="button" variant="secondary" :disabled="isSubmitting" @click="emit('close')" />
+        <BaseButton
+            :label="confirmLabel"
+            type="button"
+            variant="primary"
+            :disabled="isSubmitting"
+            :is-loading="isSubmitting"
+            @click="emit('confirm')"
+        />
       </div>
     </div>
   </div>

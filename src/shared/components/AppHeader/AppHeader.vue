@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAuthStore } from '@/modules/auth/auth.store';
-import { useNotificationsPolling } from '@/modules/notifications/composables/useNotificationsPolling';
 import { useRoute } from 'vue-router';
 import BaseLoader from '@/shared/components/BaseLoader/BaseLoader.vue';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
@@ -60,7 +59,6 @@ const isSubscriptionDialogOpen = defineModel<boolean>('subscriptionDialogOpen', 
 const subscriptionButtonLabel = computed(() => authStore.isPremium
     ? uk.payments.header.manageLabel
     : uk.home.subscribeLabel);
-useNotificationsPolling();
 const headerControls = useAppHeaderControls({
     search,
     categoryId,

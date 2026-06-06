@@ -9,6 +9,27 @@
     flex-direction: column;
 }
 
+.register-legal-notice {
+    margin: 20px 0 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.register-legal-link {
+    color: var(--color-text-subtle);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-text-subtle) 40%, transparent);
+    text-underline-offset: 2px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.register-legal-link:hover {
+    color: var(--color-primary);
+    text-decoration-color: var(--color-primary);
+}
+
 .register-form-actions {
     margin-top: 8px;
 }

@@ -635,6 +635,18 @@
 }
 
 
+.post-editor__consent-link {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+    text-underline-offset: 2px;
+    transition: text-decoration-color 0.15s ease;
+}
+
+.post-editor__consent-link:hover {
+    text-decoration-color: var(--color-primary);
+}
+
 @keyframes post-editor-audio-wave {
     0%,
     100% {

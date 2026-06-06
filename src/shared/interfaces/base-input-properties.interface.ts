@@ -6,4 +6,5 @@ export interface BaseInputProperties {
     placeholder: string;
     maxLength: number;
     errorMessage?: string;
+    disabled?: boolean;
 }

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { isRouteNavigating } from '@/core/navigation-loading';
 import { useBrowserPushRuntime } from '@/modules/notifications/composables/useBrowserPushRuntime';
+import { useNotificationsRuntime } from '@/modules/notifications/composables/useNotificationsRuntime';
 import { usePaymentsRuntime } from '@/modules/payments/composables/usePaymentsRuntime';
 
 useBrowserPushRuntime();
+useNotificationsRuntime();
 usePaymentsRuntime();
 </script>
 

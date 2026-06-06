@@ -11,6 +11,7 @@ import { usePostEditor } from '@/modules/posts/composables/usePostEditor';
 import { PostEditorEmits } from '@/modules/posts/interfaces/post-editor-emits.interface';
 import { PostEditorProps } from '@/modules/posts/interfaces/post-editor-props.interface';
 import { uk } from '@/shared/locales/uk';
+import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import refreshIconUrl from '@/shared/assets/icons/ui/refresh.svg';
 import playIconUrl from '@/shared/assets/icons/ui/play.svg';
 import searchIconUrl from '@/shared/assets/icons/ui/search.svg';
@@ -238,9 +239,15 @@ const setFileInputRef = (element: Element | ComponentPublicInstance | null): voi
 
         <BaseCheckbox
             v-model="isConsentChecked"
-            :label="uk.posts.editor.confirmation"
             :disabled="isBusy"
-        />
+        >
+          {{ uk.posts.editor.confirmationPrefix }}<RouterLink
+              :to="{ name: SharedRouteNames.COPYRIGHT }"
+              class="post-editor__consent-link"
+              target="_blank"
+              rel="noopener"
+          >{{ uk.posts.editor.confirmationLink }}</RouterLink>
+        </BaseCheckbox>
 
         <ErrorAlert v-if="errorMessage" :message="errorMessage" />
       </div>

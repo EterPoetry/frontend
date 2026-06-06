@@ -1,15 +1,31 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/modules/auth/auth.store";
 import { AuthRouteNames } from "@/modules/auth/enums/auth-route-names.enum";
 import { PostRouteNames } from "@/modules/posts/enums/post-route-names.enum";
 import { uk } from "@/shared/locales/uk";
 import LoginForm from "@/modules/auth/components/LoginForm/LoginForm.vue";
+import ErrorAlert from "@/shared/components/ErrorAlert/ErrorAlert.vue";
 import logoUrl from "@/shared/assets/icons/eter-logo.svg";
 import "./LoginPage.css";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+const oauthError = ref('');
+
+onMounted(() => {
+  const errorCode = route.query.error as string | undefined;
+  if (errorCode === 'ACCOUNT_BLOCKED') {
+    oauthError.value = uk.auth.login.errors.accountBlocked;
+  } else if (errorCode) {
+    oauthError.value = uk.auth.login.errors.authFailed;
+  }
+  if (errorCode) {
+    router.replace({ query: {} });
+  }
+});
 
 const handleLoginSuccess = async (): Promise<void> => {
   if (authStore.isVerified) {
@@ -35,6 +51,8 @@ const handleRegister = (): void => {
         <img :src="logoUrl" :alt="uk.common.appName" class="login-logo" />
         <div class="login-divider-line"></div>
       </RouterLink>
+
+      <ErrorAlert v-if="oauthError" :message="oauthError" />
 
       <LoginForm
           @login="handleLoginSuccess"

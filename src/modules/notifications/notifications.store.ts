@@ -1,5 +1,8 @@
 import { defineStore } from 'pinia';
+import { io, Socket } from 'socket.io-client';
 import api from '@/core/api';
+import { useAuthStore } from '@/modules/auth/auth.store';
+import type { NotificationItem } from '@/modules/notifications/interfaces/notification-item.interface';
 import type { NotificationsListQuery } from '@/modules/notifications/interfaces/notifications-list-query.interface';
 import type { NotificationsListResponse } from '@/modules/notifications/interfaces/notifications-list-response.interface';
 import type { NotificationsState } from '@/modules/notifications/interfaces/notifications-state.interface';
@@ -13,6 +16,17 @@ import {
     toBrowserPushSubscriptionPayload,
 } from '@/modules/notifications/utils/browser-push.utils';
 
+interface NotificationReceivedPayload {
+    notification: NotificationItem;
+    unreadCount: number;
+    unseenCount: number;
+}
+
+interface CountsUpdatedPayload {
+    unreadCount: number;
+    unseenCount: number;
+}
+
 const createInitialState = (): NotificationsState => ({
     items: [],
     nextCursor: null,
@@ -20,7 +34,11 @@ const createInitialState = (): NotificationsState => ({
     unreadCount: 0,
     unseenCount: 0,
     isLoaded: false,
+    isRealtimeConnected: false,
 });
+
+let notificationsSocket: Socket | null = null;
+let notificationsSocketToken: string | null = null;
 
 export const useNotificationsStore = defineStore('notifications', {
     state: (): NotificationsState => createInitialState(),
@@ -212,6 +230,79 @@ export const useNotificationsStore = defineStore('notifications', {
             );
 
             return { disabledTypes: response.data.disabledTypes };
+        },
+
+        receiveNotification(notification: NotificationItem, unreadCount: number, unseenCount: number): void {
+            const existingIndex = this.items.findIndex((item) => item.notificationId === notification.notificationId);
+
+            if (existingIndex === -1) {
+                this.items = [notification, ...this.items];
+            } else {
+                this.items = this.items.map((item, index) => index === existingIndex ? notification : item);
+            }
+
+            this.unreadCount = unreadCount;
+            this.unseenCount = unseenCount;
+        },
+
+        updateCounts(unreadCount: number, unseenCount: number): void {
+            this.unreadCount = unreadCount;
+            this.unseenCount = unseenCount;
+        },
+
+        connectNotificationsSocket(token: string): void {
+            if (notificationsSocket && notificationsSocketToken === token) {
+                return;
+            }
+
+            this.disconnectNotificationsSocket();
+
+            notificationsSocketToken = token;
+            notificationsSocket = io(`${import.meta.env.VITE_API_URL}/notifications`, {
+                auth: { token },
+                withCredentials: true,
+            });
+
+            notificationsSocket.on('connect', () => {
+                this.isRealtimeConnected = true;
+                void this.getNotificationsSummary().catch(() => undefined);
+            });
+
+            notificationsSocket.on('disconnect', async (reason) => {
+                this.isRealtimeConnected = false;
+
+                if (reason === 'io server disconnect' && notificationsSocket) {
+                    try {
+                        const authStore = useAuthStore();
+                        const { accessToken } = await authStore.refresh();
+
+                        if (notificationsSocket) {
+                            notificationsSocket.auth = { token: accessToken };
+                            notificationsSocket.connect();
+                        }
+                    } catch (_error) {
+                        // Refresh failed; socket stays disconnected until next login
+                    }
+                }
+            });
+
+            notificationsSocket.on('notification_received', (payload: NotificationReceivedPayload) => {
+                this.receiveNotification(payload.notification, payload.unreadCount, payload.unseenCount);
+            });
+
+            notificationsSocket.on('counts_updated', (payload: CountsUpdatedPayload) => {
+                this.updateCounts(payload.unreadCount, payload.unseenCount);
+            });
+        },
+
+        disconnectNotificationsSocket(): void {
+            if (notificationsSocket) {
+                notificationsSocket.disconnect();
+                notificationsSocket = null;
+            }
+
+            notificationsSocketToken = null;
+            this.isRealtimeConnected = false;
         },
     },
 });

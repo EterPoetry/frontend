@@ -1,0 +1,190 @@
+.admin-users-page__actions {
+    width: 112px;
+}
+
+.admin-users-page__actions .admin-page__row-button {
+    justify-items: start;
+}
+
+.admin-users-dialog {
+    display: grid;
+    gap: 20px;
+}
+
+.admin-users-dialog__loading {
+    padding: 24px 0;
+}
+
+.admin-users-dialog__identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.admin-users-dialog__avatar {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.admin-users-dialog__identity-copy {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-users-dialog__name {
+    color: var(--color-text-strong);
+    font-size: 1.1rem;
+}
+
+.admin-users-dialog__username {
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+}
+
+/* ── Stats row ──────────────────────────────────────────── */
+
+.admin-users-dialog__stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.admin-users-dialog__stat {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--color-bg-card-elevated) 82%, transparent);
+    border: 1px solid var(--color-border-soft);
+}
+
+.admin-users-dialog__stat-value {
+    color: var(--color-text-strong);
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.admin-users-dialog__stat-label {
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+/* ── Info list ──────────────────────────────────────────── */
+
+.admin-users-dialog__info {
+    display: grid;
+    gap: 8px;
+}
+
+/* ── Action button ──────────────────────────────────────── */
+
+.admin-users-dialog__action .btn {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 20px;
+    font-size: 14px;
+}
+
+/* ── Violations section ─────────────────────────────────── */
+
+.admin-users-dialog__violations {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-users-dialog__violations-title {
+    margin: 0;
+    color: var(--color-text-strong);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.admin-users-dialog__violations-empty {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+}
+
+.admin-users-dialog__violations-list {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-users-dialog__violation {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border-soft);
+    background: color-mix(in srgb, var(--color-bg-card-elevated) 78%, transparent);
+}
+
+.admin-users-dialog__violation-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.admin-users-dialog__violation-reason {
+    color: var(--color-text-strong);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.admin-users-dialog__violation-date {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.admin-users-dialog__violation-meta {
+    display: grid;
+    gap: 6px;
+}
+
+.admin-users-dialog__violation .btn {
+    width: auto;
+    min-height: 34px;
+    padding: 6px 14px;
+    font-size: 13px;
+    align-self: start;
+}
+
+@media (max-width: 640px) {
+    .admin-users-page__actions {
+        width: 100%;
+    }
+
+    .admin-users-page__actions .admin-page__row-button {
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--color-border-soft);
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--color-bg-card-elevated) 72%, transparent);
+    }
+
+    .admin-users-dialog__identity,
+    .admin-users-dialog__violation-head {
+        align-items: start;
+        flex-direction: column;
+    }
+
+    .admin-users-dialog__stats {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

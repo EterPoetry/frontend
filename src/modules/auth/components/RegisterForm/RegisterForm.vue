@@ -3,10 +3,12 @@ import { useRegisterForm } from "@/modules/auth/composables/useRegisterForm";
 import { AuthData } from "@/modules/auth/interfaces/auth-data.interface.ts";
 import { AuthEvents } from "@/modules/auth/enums/auth-events.enum";
 import { AUTH_MAX_LENGTH } from "@/modules/auth/constants/auth-max-length.constants";
+import { SharedRouteNames } from "@/shared/enums/shared-route-names.enum";
 import BaseInput from "@/shared/components/BaseInput/BaseInput.vue";
 import BaseButton from "@/shared/components/BaseButton/BaseButton.vue";
 import ErrorAlert from "@/shared/components/ErrorAlert/ErrorAlert.vue";
 import googleIconUrl from "@/shared/assets/icons/google.svg";
+import { uk } from "@/shared/locales/uk";
 import "./RegisterForm.css";
 
 const emit = defineEmits<{
@@ -78,6 +80,13 @@ const {
           :max-length="AUTH_MAX_LENGTH.PASSWORD"
       />
     </div>
+
+    <p class="register-legal-notice">
+      {{ uk.legal.registerNotice }}
+      <RouterLink :to="{ name: SharedRouteNames.TERMS }" class="register-legal-link" target="_blank" rel="noopener">{{ uk.legal.termsShort }}</RouterLink>
+      {{ uk.legal.registerNoticeSep }}
+      <RouterLink :to="{ name: SharedRouteNames.PRIVACY }" class="register-legal-link" target="_blank" rel="noopener">{{ uk.legal.privacyShort }}</RouterLink>.
+    </p>
 
     <div class="register-form-actions">
       <BaseButton

@@ -19,6 +19,7 @@ const { isPasswordVisible, togglePasswordVisibility, inputType } = useBaseInput(
           :placeholder="placeholder"
           :value="modelValue"
           :maxlength="maxLength"
+          :disabled="disabled"
           :class="['input-field', { 'is-invalid': errorMessage }]"
           :aria-invalid="Boolean(errorMessage)"
           autocomplete="off"
@@ -29,6 +30,7 @@ const { isPasswordVisible, togglePasswordVisibility, inputType } = useBaseInput(
           v-if="type === 'password'"
           type="button"
           class="password-toggle"
+          :disabled="disabled"
           @click="togglePasswordVisibility"
       >
         <svg v-if="!isPasswordVisible" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

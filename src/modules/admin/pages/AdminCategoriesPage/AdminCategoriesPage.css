@@ -1,0 +1,18 @@
+.admin-categories-page__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-categories-page__actions .btn {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 14px;
+}
+
+@media (max-width: 640px) {
+    .admin-categories-page__actions,
+    .admin-categories-page__actions .btn {
+        width: 100%;
+    }
+}

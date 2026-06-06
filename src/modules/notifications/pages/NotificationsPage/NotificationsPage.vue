@@ -3,7 +3,6 @@ import { computed, ref } from 'vue';
 import CreatePostModal from '@/modules/posts/components/CreatePostModal/CreatePostModal.vue';
 import NotificationPushSettingsDialog from '@/modules/notifications/components/NotificationPushSettingsDialog/NotificationPushSettingsDialog.vue';
 import { usePostsAppShell } from '@/modules/posts/composables/usePostsAppShell';
-import { useNotificationsPolling } from '@/modules/notifications/composables/useNotificationsPolling';
 import { useNotificationsPage } from '@/modules/notifications/composables/useNotificationsPage';
 import type { NotificationItem } from '@/modules/notifications/interfaces/notification-item.interface';
 import AppShell from '@/shared/components/AppShell/AppShell.vue';
@@ -62,8 +61,6 @@ const {
     setFilter,
     unreadCount,
 } = useNotificationsPage();
-useNotificationsPolling({ fullFeed: true });
-
 const isSettingsDialogOpen = ref(false);
 
 const setLoadMoreTrigger = (element: Element | unknown): void => {

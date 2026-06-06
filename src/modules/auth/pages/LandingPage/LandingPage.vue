@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 import { PostRouteNames } from '@/modules/posts/enums/post-route-names.enum';
+import { SharedRouteNames } from '@/shared/enums/shared-route-names.enum';
 import { uk } from '@/shared/locales/uk';
 import { useTheme } from '@/shared/composables/useTheme';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
@@ -170,5 +171,14 @@ const openApp = (): void => {
         </div>
       </section>
     </main>
+
+    <footer class="landing-footer">
+      <p class="landing-footer__copy">© {{ new Date().getFullYear() }} {{ uk.common.appName }}</p>
+      <nav class="landing-footer__nav" :aria-label="uk.legal.kicker">
+        <RouterLink :to="{ name: SharedRouteNames.TERMS }" class="landing-footer__link">{{ uk.legal.terms.title }}</RouterLink>
+        <RouterLink :to="{ name: SharedRouteNames.PRIVACY }" class="landing-footer__link">{{ uk.legal.privacy.title }}</RouterLink>
+        <RouterLink :to="{ name: SharedRouteNames.COPYRIGHT }" class="landing-footer__link">{{ uk.legal.copyright.title }}</RouterLink>
+      </nav>
+    </footer>
   </div>
 </template>

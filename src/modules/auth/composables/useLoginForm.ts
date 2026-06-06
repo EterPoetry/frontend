@@ -56,9 +56,11 @@ export function useLoginForm(emit: LoginEmits) {
                 });
             }
         } catch (error: unknown) {
-            const axiosError = error as AxiosError<{ message?: string }>;
+            const axiosError = error as AxiosError<{ message?: string; code?: string }>;
             if (!axiosError.response || axiosError.response.status >= 500) {
                 errorMessage.value = common.errors.serverError;
+            } else if (axiosError.response.status === 403 && axiosError.response.data?.code === 'ACCOUNT_BLOCKED') {
+                errorMessage.value = login.errors.accountBlocked;
             } else if (axiosError.response.status === 401) {
                 errorMessage.value = login.errors.loginError;
             }

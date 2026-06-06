@@ -3,9 +3,10 @@ import './BaseCheckbox.css';
 
 withDefaults(defineProps<{
     modelValue: boolean;
-    label: string;
+    label?: string;
     disabled?: boolean;
 }>(), {
+    label: '',
     disabled: false,
 });
 
@@ -22,6 +23,8 @@ defineEmits<{ (e: 'update:modelValue', value: boolean): void }>();
         @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
     />
     <span class="base-checkbox__mark" aria-hidden="true" />
-    <span class="base-checkbox__label">{{ label }}</span>
+    <span class="base-checkbox__label">
+      <slot>{{ label }}</slot>
+    </span>
   </label>
 </template>

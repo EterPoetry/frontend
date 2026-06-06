@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { useAdminStore } from '@/modules/admin/admin.store';
+import { AdminRouteNames } from '@/modules/admin/enums/admin-route-names.enum';
 import { useAuthStore } from '@/modules/auth/auth.store';
 import { AuthRouteNames } from '@/modules/auth/enums/auth-route-names.enum';
 import { NotificationRouteNames } from '@/modules/notifications/enums/notification-route-names.enum';
@@ -15,6 +17,54 @@ import { isRouteNavigating } from '@/core/navigation-loading';
 const noIndexMeta = SEO_ROUTES.noIndex;
 
 const routes: Array<RouteRecordRaw> = [
+    {
+        path: '/admin/login',
+        name: AdminRouteNames.LOGIN,
+        component: () => import('@/modules/admin/pages/AdminLoginPage/AdminLoginPage.vue'),
+        meta: { isPublic: true, isAdminRoute: true, guestAdminOnly: true, skipAdminRefresh: true, title: uk.admin.login.title, ...noIndexMeta }
+    },
+    {
+        path: '/admin/invite/accept',
+        name: AdminRouteNames.INVITE_ACCEPT,
+        component: () => import('@/modules/admin/pages/AdminInviteAcceptPage/AdminInviteAcceptPage.vue'),
+        meta: { isPublic: true, isAdminRoute: true, guestAdminOnly: true, skipAdminRefresh: true, title: uk.admin.inviteAccept.title, ...noIndexMeta }
+    },
+    {
+        path: '/admin',
+        name: AdminRouteNames.DASHBOARD,
+        component: () => import('@/modules/admin/pages/AdminDashboardPage/AdminDashboardPage.vue'),
+        meta: { isAdminRoute: true, requiresAdminAuth: true, title: uk.admin.dashboard.title, ...noIndexMeta }
+    },
+    {
+        path: '/admin/complaints',
+        name: AdminRouteNames.COMPLAINTS,
+        component: () => import('@/modules/admin/pages/AdminComplaintsPage/AdminComplaintsPage.vue'),
+        meta: { isAdminRoute: true, requiresAdminAuth: true, title: uk.admin.complaints.title, ...noIndexMeta }
+    },
+    {
+        path: '/admin/users',
+        name: AdminRouteNames.USERS,
+        component: () => import('@/modules/admin/pages/AdminUsersPage/AdminUsersPage.vue'),
+        meta: { isAdminRoute: true, requiresAdminAuth: true, title: uk.admin.users.title, ...noIndexMeta }
+    },
+    {
+        path: '/admin/categories',
+        name: AdminRouteNames.CATEGORIES,
+        component: () => import('@/modules/admin/pages/AdminCategoriesPage/AdminCategoriesPage.vue'),
+        meta: { isAdminRoute: true, requiresAdminAuth: true, title: uk.admin.categories.title, ...noIndexMeta }
+    },
+    {
+        path: '/admin/admins',
+        name: AdminRouteNames.ADMINS,
+        component: () => import('@/modules/admin/pages/AdminAdminsPage/AdminAdminsPage.vue'),
+        meta: { isAdminRoute: true, requiresAdminAuth: true, requiresGlobalAdmin: true, title: uk.admin.admins.title, ...noIndexMeta }
+    },
+    {
+        path: '/admin/profile',
+        name: AdminRouteNames.PROFILE,
+        component: () => import('@/modules/admin/pages/AdminProfilePage/AdminProfilePage.vue'),
+        meta: { isAdminRoute: true, requiresAdminAuth: true, title: uk.admin.profile.title, ...noIndexMeta }
+    },
     {
         path: '/',
         name: SharedRouteNames.LANDING,
@@ -126,6 +176,24 @@ const routes: Array<RouteRecordRaw> = [
         meta: { isPublic: true, guestOnly: true, skipAuthRefresh: true, title: uk.auth.resetPassword.title, ...noIndexMeta }
     },
     {
+        path: '/terms',
+        name: SharedRouteNames.TERMS,
+        component: () => import('@/shared/pages/TermsOfServicePage/TermsOfServicePage.vue'),
+        meta: { isPublic: true, title: uk.legal.terms.title, ...noIndexMeta }
+    },
+    {
+        path: '/privacy',
+        name: SharedRouteNames.PRIVACY,
+        component: () => import('@/shared/pages/PrivacyPolicyPage/PrivacyPolicyPage.vue'),
+        meta: { isPublic: true, title: uk.legal.privacy.title, ...noIndexMeta }
+    },
+    {
+        path: '/copyright',
+        name: SharedRouteNames.COPYRIGHT,
+        component: () => import('@/shared/pages/CopyrightPolicyPage/CopyrightPolicyPage.vue'),
+        meta: { isPublic: true, title: uk.legal.copyright.title, ...noIndexMeta }
+    },
+    {
         path: '/404',
         name: SharedRouteNames.NOT_FOUND,
         component: () => import('@/shared/pages/NotFoundPage/NotFoundPage.vue'),
@@ -153,10 +221,49 @@ router.onError(() => {
 });
 
 let isInitialAuthenticationChecked = false;
+let isInitialAdminAuthenticationChecked = false;
 
 router.beforeEach(async (to, _from, next) => {
     isRouteNavigating.value = true;
     const authStore = useAuthStore();
+    const adminStore = useAdminStore();
+
+    if (to.meta.isAdminRoute) {
+        if (!isInitialAdminAuthenticationChecked) {
+            isInitialAdminAuthenticationChecked = true;
+
+            if (to.meta.guestAdminOnly || to.meta.isPublic || !adminStore.token) {
+                try {
+                    await adminStore.refresh();
+                    await adminStore.getProfile();
+                } catch (_error) {
+                    adminStore.clearSession();
+                }
+            } else if (adminStore.token) {
+                try {
+                    await adminStore.getProfile();
+                } catch (_error) {
+                    adminStore.clearSession();
+                }
+            }
+
+            adminStore.isInitialized = true;
+        }
+
+        if (to.meta.guestAdminOnly && adminStore.isAuthenticated) {
+            return next({ name: AdminRouteNames.DASHBOARD });
+        }
+
+        if (to.meta.requiresAdminAuth && !adminStore.isAuthenticated) {
+            return next({ name: AdminRouteNames.LOGIN });
+        }
+
+        if (to.meta.requiresGlobalAdmin && !adminStore.isGlobalAdmin) {
+            return next({ name: AdminRouteNames.DASHBOARD });
+        }
+
+        return next();
+    }
 
     const googleAccessToken = to.query.accessToken as string;
     if (googleAccessToken) {
