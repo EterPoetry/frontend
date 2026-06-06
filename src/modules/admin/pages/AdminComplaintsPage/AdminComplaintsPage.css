@@ -42,33 +42,6 @@
     min-width: 190px;
 }
 
-.admin-complaints-page__chevron-head,
-.admin-complaints-page__chevron-cell {
-    width: 32px;
-    padding-left: 6px;
-    padding-right: 12px;
-}
-
-.admin-complaints-page__chevron-cell {
-    vertical-align: middle;
-}
-
-.admin-complaints-page__chevron {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-muted);
-    font-size: 1.15rem;
-    line-height: 1;
-    transition: transform 160ms ease, color 160ms ease;
-}
-
-.admin-complaints-page__row:hover .admin-complaints-page__chevron,
-.admin-complaints-page__row:focus-visible .admin-complaints-page__chevron {
-    color: var(--color-primary);
-    transform: translateX(2px);
-}
-
 .admin-complaints-page__action-btn {
     width: auto;
     min-width: 0;

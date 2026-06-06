@@ -1,0 +1,135 @@
+.admin-profile-dialog {
+    --admin-profile-status-color: #2f8f5b;
+
+    display: grid;
+    gap: 16px;
+}
+
+.admin-profile-dialog__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--color-bg-card-elevated) 86%, transparent);
+    box-shadow: 0 14px 34px color-mix(in srgb, var(--color-shadow-soft) 42%, transparent);
+}
+
+.admin-profile-dialog__identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.admin-profile-dialog__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border-soft));
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-card-elevated));
+    color: var(--color-primary);
+    font-family: var(--font-family-title), serif;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.admin-profile-dialog__identity-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.admin-profile-dialog__identity-name {
+    overflow: hidden;
+    color: var(--color-text-strong);
+    font-size: 16px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-profile-dialog__identity-email {
+    overflow-wrap: anywhere;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.admin-profile-dialog__badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.admin-profile-dialog__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 7px 11px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-bg-card-elevated) 92%, transparent);
+    color: var(--color-text-strong);
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.admin-profile-dialog__badge-label {
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.admin-profile-dialog__badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+}
+
+.admin-profile-dialog__badge--success {
+    border-color: color-mix(in srgb, var(--admin-profile-status-color) 36%, var(--color-border-soft));
+    color: var(--admin-profile-status-color);
+}
+
+.admin-profile-dialog__badge--success .admin-profile-dialog__badge-dot {
+    background: var(--admin-profile-status-color);
+}
+
+.admin-profile-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.admin-profile-dialog__actions .btn {
+    width: auto;
+    min-height: 44px;
+    padding: 12px 22px;
+    font-size: 15px;
+}
+
+@media (max-width: 640px) {
+    .admin-profile-dialog__summary {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-profile-dialog__badges {
+        justify-content: flex-start;
+    }
+
+    .admin-profile-dialog__actions,
+    .admin-profile-dialog__actions .btn {
+        width: 100%;
+    }
+}

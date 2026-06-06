@@ -2,6 +2,7 @@
     --admin-color-success: #2e9a62;
     --admin-color-danger: #c05555;
     --admin-color-warning: #d38a29;
+    color: var(--color-text-main);
 }
 
 .admin-page {
@@ -187,6 +188,8 @@
 
 .admin-page__toolbar-actions {
     display: flex;
+    align-self: end;
+    align-items: center;
     gap: 8px;
     flex-wrap: wrap;
 }
@@ -214,6 +217,7 @@
     width: 100%;
     min-width: 720px;
     border-collapse: collapse;
+    color: var(--color-text-ui);
     font-size: 14px;
 }
 
@@ -348,16 +352,6 @@
     font-size: 14px;
 }
 
-.admin-page__feedback {
-    margin: 0;
-    padding: 12px 14px;
-    border: 1px solid color-mix(in srgb, var(--admin-color-success) 24%, transparent);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--admin-color-success) 10%, transparent);
-    color: var(--admin-color-success);
-    font-size: 0.9rem;
-    font-weight: 600;
-}
 
 .admin-page__error-actions {
     display: flex;
@@ -371,17 +365,12 @@
     font-size: 14px;
 }
 
-.admin-page__load-more {
+.admin-page__infinite-scroll {
+    min-height: 36px;
     display: flex;
     justify-content: center;
+    align-items: center;
     padding: 6px 0;
-}
-
-.admin-page__load-more .btn {
-    width: auto;
-    min-height: 44px;
-    padding: 10px 28px;
-    font-size: 15px;
 }
 
 .admin-page__cell-label {
@@ -447,6 +436,10 @@
         width: 100%;
     }
 
+    .admin-page__toolbar-actions {
+        align-self: stretch;
+    }
+
     .admin-page__field--search,
     .admin-page__field--sm {
         flex-basis: 100%;
@@ -495,11 +488,6 @@
     .admin-page__table th,
     .admin-page__table td {
         padding: 8px 10px;
-    }
-
-    .admin-page__load-more .btn {
-        width: 100%;
-        max-width: 280px;
     }
 
     .admin-page__toolbar-status {

@@ -38,10 +38,9 @@ const {
     items,
     isLoading,
     errorMessage,
-    feedbackMessage,
     hasNextPage,
+    setLoadMoreTrigger,
     loadItems,
-    loadMore,
     applyFilters,
 } = useAdminPaginatedList<AdminUserListItem, AdminUsersListQuery>({
     fetchItems: (query) => adminStore.getUsers(query),
@@ -114,26 +113,19 @@ const runUserAction = async (): Promise<void> => {
         return;
     }
 
-    feedbackMessage.value = '';
     detailErrorMessage.value = '';
     isActionSubmitting.value = true;
 
     try {
         if (pendingAction.value.kind === 'block') {
             await adminStore.blockUser(pendingAction.value.user.userId);
-            feedbackMessage.value = uk.admin.users.blockSuccess;
         } else if (pendingAction.value.kind === 'unblock') {
             await adminStore.unblockUser(pendingAction.value.user.userId);
-            feedbackMessage.value = uk.admin.users.unblockSuccess;
         } else {
-            const response = await adminStore.deleteViolation(
+            await adminStore.deleteViolation(
                 pendingAction.value.user.userId,
                 pendingAction.value.violation.complaintId,
             );
-
-            feedbackMessage.value = pendingAction.value.user.blockedAt && !response.userBlocked
-                ? uk.admin.users.autoUnblocked
-                : uk.admin.users.removeViolationSuccess;
         }
 
         const activeUserId = pendingAction.value.user.userId;
@@ -207,8 +199,6 @@ onBeforeUnmount(() => {
             @click="applyFilters"
         />
       </div>
-      <p v-if="feedbackMessage" class="admin-page__feedback">{{ feedbackMessage }}</p>
-
       <div v-if="isLoading && !items.length" class="admin-page__loading">
         <BaseLoader :label="uk.common.labels.loading" size="md" tone="primary" variant="wave" centered />
       </div>
@@ -225,7 +215,7 @@ onBeforeUnmount(() => {
               <th>{{ uk.admin.users.postsCount }}</th>
               <th>{{ uk.admin.users.violationsCount }}</th>
               <th>{{ uk.admin.status.blocked }}</th>
-              <th />
+              <th>{{ uk.admin.table.actions }}</th>
             </tr>
           </thead>
           <tbody>
@@ -243,31 +233,24 @@ onBeforeUnmount(() => {
                   {{ item.blockedAt ? uk.admin.status.blocked : uk.admin.status.active }}
                 </span>
               </td>
-              <td class="admin-users-page__actions" data-label="">
-                <button
+              <td class="admin-users-page__actions" :data-label="uk.admin.table.actions">
+                <BaseButton
+                    :label="uk.admin.actions.showDetails"
                     type="button"
-                    class="admin-page__row-button"
+                    variant="secondary"
+                    class="admin-users-page__details-button"
+                    :disabled="false"
                     :aria-label="`${uk.admin.actions.showDetails}: ${item.name}`"
                     @click="openUserDetails(item.userId)"
-                >
-                  <span class="admin-page__title-primary">{{ uk.admin.actions.showDetails }}</span>
-                  <span class="admin-page__title-secondary">{{ uk.admin.users.detailsTitle }}</span>
-                </button>
+                />
               </td>
             </tr>
           </tbody>
         </table>
       </section>
 
-      <div v-if="hasNextPage" class="admin-page__load-more">
-        <BaseButton
-            :label="uk.admin.actions.loadMore"
-            type="button"
-            variant="secondary"
-            :disabled="isLoading"
-            :is-loading="isLoading"
-            @click="loadMore"
-        />
+      <div v-if="hasNextPage" :ref="setLoadMoreTrigger" class="admin-page__infinite-scroll" aria-live="polite">
+        <BaseLoader v-if="isLoading" :label="uk.common.labels.loading" size="sm" tone="primary" variant="wave" />
       </div>
     </section>
 

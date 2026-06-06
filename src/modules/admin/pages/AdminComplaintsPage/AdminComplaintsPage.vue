@@ -39,10 +39,9 @@ const {
     items,
     isLoading,
     errorMessage,
-    feedbackMessage,
     hasNextPage,
+    setLoadMoreTrigger,
     loadItems,
-    loadMore,
     applyFilters,
 } = useAdminPaginatedList<AdminComplaintItem, AdminComplaintsListQuery>({
     fetchItems: (query) => adminStore.getComplaints(query),
@@ -60,22 +59,18 @@ const runComplaintAction = async (): Promise<void> => {
         return;
     }
 
-    feedbackMessage.value = '';
     isActionSubmitting.value = true;
 
     try {
         if (pendingAction.value.kind === 'accept') {
             await adminStore.acceptComplaint(pendingAction.value.item.complaintId);
-            feedbackMessage.value = uk.admin.complaints.acceptSuccess;
         } else if (pendingAction.value.kind === 'decline') {
             await adminStore.declineComplaint(pendingAction.value.item.complaintId);
-            feedbackMessage.value = uk.admin.complaints.declineSuccess;
         } else {
             await adminStore.deleteViolation(
                 pendingAction.value.item.targetUser.userId,
                 pendingAction.value.item.complaintId,
             );
-            feedbackMessage.value = uk.admin.complaints.cancelViolationSuccess;
         }
 
         const activeComplaintId = pendingAction.value.item.complaintId;
@@ -211,8 +206,6 @@ const closeComplaintDetails = (): void => {
             @click="applyFilters"
         />
       </div>
-      <p v-if="feedbackMessage" class="admin-page__feedback">{{ feedbackMessage }}</p>
-
       <div v-if="isLoading && !items.length" class="admin-page__loading">
         <BaseLoader :label="uk.common.labels.loading" size="md" tone="primary" variant="wave" centered />
       </div>
@@ -229,7 +222,6 @@ const closeComplaintDetails = (): void => {
               <th>{{ uk.admin.complaints.target }}</th>
               <th>{{ uk.admin.admins.createdAt }}</th>
               <th>{{ uk.admin.complaints.statusFilterLabel }}</th>
-              <th class="admin-complaints-page__chevron-head" aria-hidden="true" />
             </tr>
           </thead>
           <tbody>
@@ -286,23 +278,13 @@ const closeComplaintDetails = (): void => {
                   <span class="admin-page__title-secondary">{{ actionLabel(item.status) }}</span>
                 </div>
               </td>
-              <td class="admin-complaints-page__chevron-cell" data-label="" aria-hidden="true">
-                <span class="admin-complaints-page__chevron">›</span>
-              </td>
             </tr>
           </tbody>
         </table>
       </section>
 
-      <div v-if="hasNextPage" class="admin-page__load-more">
-        <BaseButton
-            :label="uk.admin.actions.loadMore"
-            type="button"
-            variant="secondary"
-            :disabled="isLoading"
-            :is-loading="isLoading"
-            @click="loadMore"
-        />
+      <div v-if="hasNextPage" :ref="setLoadMoreTrigger" class="admin-page__infinite-scroll" aria-live="polite">
+        <BaseLoader v-if="isLoading" :label="uk.common.labels.loading" size="sm" tone="primary" variant="wave" />
       </div>
     </section>
 

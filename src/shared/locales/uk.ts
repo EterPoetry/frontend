@@ -18,6 +18,7 @@ export const uk = {
             serverError: 'Сталася помилка. Перевірте ваше з’єднання або спробуйте пізніше.',
             emptyFields: 'Будь ласка, заповніть всі поля',
             invalidEmail: 'Введіть коректну email адресу',
+            invalidEmailDomain: 'Введіть email з коректним доменом',
             nameTooShort: (min: number) => `Ім’я має містити мінімум ${min} символи`,
             usernameTooShort: (min: number) => `Ім’я користувача має містити мінімум ${min} символи`,
             passwordTooShort: (min: number) => `Пароль має містити мінімум ${min} символів`,
@@ -802,9 +803,11 @@ export const uk = {
             removeViolation: 'Зняти порушення',
             showDetails: 'Деталі',
             review: 'Розглянути',
-            loadMore: 'Завантажити ще',
             darkTheme: 'Темна тема',
             lightTheme: 'Світла тема',
+        },
+        table: {
+            actions: 'Дії',
         },
         sort: {
             asc: 'За зростанням',
@@ -932,14 +935,12 @@ export const uk = {
             sortById: 'За ID',
             fields: {
                 name: 'Назва',
-                description: 'Опис',
             },
             dialog: {
                 createTitle: 'Нова категорія',
                 editTitle: 'Редагування категорії',
                 subtitle: 'Назва має бути унікальною незалежно від регістру.',
                 namePlaceholder: 'Наприклад, Поезія',
-                descriptionPlaceholder: 'Короткий опис для редакторської команди',
                 create: 'Створити',
                 save: 'Зберегти',
             },

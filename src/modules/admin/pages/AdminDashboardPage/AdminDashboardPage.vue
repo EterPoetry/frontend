@@ -146,17 +146,17 @@ onMounted(() => {
             <span v-if="isLoading && overview" class="admin-page__toolbar-status admin-dashboard-page__range-status">
               <BaseLoader :label="uk.common.labels.loading" size="sm" tone="primary" variant="wave" />
             </span>
-            <button
+            <BaseButton
                 v-for="option in periodOptions"
                 :key="option.days"
+                :label="option.label"
                 type="button"
+                variant="secondary"
                 class="admin-dashboard-page__range-option"
                 :class="{ 'admin-dashboard-page__range-option--active': selectedRangeDays === option.days }"
                 :disabled="isLoading"
                 @click="selectedRangeDays = option.days; loadDashboard()"
-            >
-              {{ option.label }}
-            </button>
+            />
           </div>
         </div>
 

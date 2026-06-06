@@ -10,7 +10,7 @@ body {
 
 :root {
     --color-bg-page: #f0ebe1;
-    --color-bg-card: #f7f3ec;
+    --color-bg-card: #fff8ec;
     --color-bg-card-elevated: #ffffff;
     --color-bg-card-soft: rgba(247, 243, 236, 0.8);
     --color-bg-card-strong: rgba(255, 251, 244, 0.9);

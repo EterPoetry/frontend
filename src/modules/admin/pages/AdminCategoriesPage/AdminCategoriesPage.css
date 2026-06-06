@@ -1,6 +1,28 @@
+.admin-categories-page__table {
+    table-layout: fixed;
+}
+
+.admin-categories-page__name-col {
+    width: 33.333%;
+}
+
+.admin-categories-page__posts-col {
+    width: 33.333%;
+}
+
+.admin-categories-page__actions-col {
+    width: 33.333%;
+}
+
+.admin-categories-page__name-cell {
+    color: var(--color-text-strong);
+    font-weight: 600;
+}
+
 .admin-categories-page__actions {
     display: flex;
     gap: 8px;
+    justify-content: flex-start;
 }
 
 .admin-categories-page__actions .btn {
@@ -11,6 +33,10 @@
 }
 
 @media (max-width: 640px) {
+    .admin-categories-page__table {
+        table-layout: auto;
+    }
+
     .admin-categories-page__actions,
     .admin-categories-page__actions .btn {
         width: 100%;

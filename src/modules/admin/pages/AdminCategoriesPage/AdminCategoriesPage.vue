@@ -32,10 +32,9 @@ const {
     items,
     isLoading,
     errorMessage,
-    feedbackMessage,
     hasNextPage,
+    setLoadMoreTrigger,
     loadItems,
-    loadMore,
     applyFilters,
     handleItemDeleted,
 } = useAdminPaginatedList<AdminCategory, AdminCategoriesListQuery>({
@@ -60,18 +59,15 @@ const openEditDialog = (category: AdminCategory): void => {
     isDialogOpen.value = true;
 };
 
-const submitCategory = async (payload: { categoryName: string; categoryDescription: string | null }): Promise<void> => {
+const submitCategory = async (payload: { categoryName: string }): Promise<void> => {
     isDialogSubmitting.value = true;
     dialogErrorMessage.value = '';
-    feedbackMessage.value = '';
 
     try {
         if (editingCategory.value) {
             await adminStore.updateCategory(editingCategory.value.categoryId, payload);
-            feedbackMessage.value = uk.admin.categories.updateSuccess;
         } else {
             await adminStore.createCategory(payload);
-            feedbackMessage.value = uk.admin.categories.createSuccess;
         }
 
         isDialogOpen.value = false;
@@ -88,13 +84,11 @@ const confirmDelete = async (): Promise<void> => {
         return;
     }
 
-    feedbackMessage.value = '';
     isDeleteSubmitting.value = true;
 
     try {
         await adminStore.deleteCategory(deleteTarget.value.categoryId);
         deleteTarget.value = null;
-        feedbackMessage.value = uk.admin.categories.deleteSuccess;
         await handleItemDeleted();
     } catch (error) {
         errorMessage.value = getApiErrorMessage(error) ?? uk.common.errors.serverError;
@@ -161,8 +155,6 @@ const confirmDelete = async (): Promise<void> => {
             @click="applyFilters"
         />
       </div>
-      <p v-if="feedbackMessage" class="admin-page__feedback">{{ feedbackMessage }}</p>
-
       <div v-if="isLoading && !items.length" class="admin-page__loading">
         <BaseLoader :label="uk.common.labels.loading" size="md" tone="primary" variant="wave" centered />
       </div>
@@ -172,21 +164,24 @@ const confirmDelete = async (): Promise<void> => {
       </div>
 
       <section v-else class="admin-page__table-wrap admin-page__table-wrap--cards">
-        <table class="admin-page__table">
+        <table class="admin-page__table admin-categories-page__table">
+          <colgroup>
+            <col class="admin-categories-page__name-col" />
+            <col class="admin-categories-page__posts-col" />
+            <col class="admin-categories-page__actions-col" />
+          </colgroup>
           <thead>
             <tr>
               <th>{{ uk.admin.categories.fields.name }}</th>
-              <th>{{ uk.admin.categories.fields.description }}</th>
               <th>{{ uk.admin.categories.postsCount }}</th>
-              <th></th>
+              <th>{{ uk.admin.table.actions }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.categoryId">
-              <td :data-label="uk.admin.categories.fields.name">{{ item.categoryName }}</td>
-              <td :data-label="uk.admin.categories.fields.description">{{ item.categoryDescription || '-' }}</td>
+              <td class="admin-categories-page__name-cell" :data-label="uk.admin.categories.fields.name">{{ item.categoryName }}</td>
               <td :data-label="uk.admin.categories.postsCount">{{ item.postsCount }}</td>
-              <td class="admin-categories-page__actions" data-label="">
+              <td class="admin-categories-page__actions" :data-label="uk.admin.table.actions">
                 <BaseButton
                     :label="uk.admin.actions.edit"
                     type="button"
@@ -207,15 +202,8 @@ const confirmDelete = async (): Promise<void> => {
         </table>
       </section>
 
-      <div v-if="hasNextPage" class="admin-page__load-more">
-        <BaseButton
-            :label="uk.admin.actions.loadMore"
-            type="button"
-            variant="secondary"
-            :disabled="isLoading"
-            :is-loading="isLoading"
-            @click="loadMore"
-        />
+      <div v-if="hasNextPage" :ref="setLoadMoreTrigger" class="admin-page__infinite-scroll" aria-live="polite">
+        <BaseLoader v-if="isLoading" :label="uk.common.labels.loading" size="sm" tone="primary" variant="wave" />
       </div>
     </section>
 

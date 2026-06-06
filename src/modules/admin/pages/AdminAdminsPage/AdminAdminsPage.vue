@@ -33,10 +33,9 @@ const {
     items,
     isLoading,
     errorMessage,
-    feedbackMessage,
     hasNextPage,
+    setLoadMoreTrigger,
     loadItems,
-    loadMore,
     applyFilters,
     handleItemDeleted,
 } = useAdminPaginatedList<AdminAccount, AdminListQuery>({
@@ -51,13 +50,11 @@ const {
 
 const submitInvite = async (email: string): Promise<void> => {
     inviteErrorMessage.value = '';
-    feedbackMessage.value = '';
     isInviteSubmitting.value = true;
 
     try {
         await adminStore.inviteAdmin(email);
         isInviteDialogOpen.value = false;
-        feedbackMessage.value = uk.admin.admins.invitedSuccess;
         await loadItems();
     } catch (error) {
         if (isAxiosError(error) && error.response?.status === 403) {
@@ -75,13 +72,11 @@ const confirmDelete = async (): Promise<void> => {
         return;
     }
 
-    feedbackMessage.value = '';
     isDeleteSubmitting.value = true;
 
     try {
         await adminStore.deleteAdmin(deleteTarget.value.adminId);
         deleteTarget.value = null;
-        feedbackMessage.value = uk.admin.admins.deleteSuccess;
         await handleItemDeleted();
     } catch (error) {
         errorMessage.value = getApiErrorMessage(error) ?? uk.common.errors.serverError;
@@ -149,8 +144,6 @@ const confirmDelete = async (): Promise<void> => {
             @click="applyFilters"
         />
       </div>
-      <p v-if="feedbackMessage" class="admin-page__feedback">{{ feedbackMessage }}</p>
-
       <div v-if="isLoading && !items.length" class="admin-page__loading">
         <BaseLoader :label="uk.common.labels.loading" size="md" tone="primary" variant="wave" centered />
       </div>
@@ -167,7 +160,7 @@ const confirmDelete = async (): Promise<void> => {
               <th>{{ uk.admin.admins.status }}</th>
               <th>{{ uk.admin.admins.createdAt }}</th>
               <th>{{ uk.admin.admins.inviteExpiresAt }}</th>
-              <th></th>
+              <th>{{ uk.admin.table.actions }}</th>
             </tr>
           </thead>
           <tbody>
@@ -185,7 +178,7 @@ const confirmDelete = async (): Promise<void> => {
               </td>
               <td :data-label="uk.admin.admins.createdAt">{{ formatAdminDateTime(item.createdAt) }}</td>
               <td :data-label="uk.admin.admins.inviteExpiresAt">{{ formatAdminDateTime(item.inviteExpiresAt) }}</td>
-              <td class="admin-admins-page__actions" data-label="">
+              <td class="admin-admins-page__actions" :data-label="uk.admin.table.actions">
                 <BaseButton
                     :label="uk.admin.actions.delete"
                     type="button"
@@ -199,15 +192,8 @@ const confirmDelete = async (): Promise<void> => {
         </table>
       </section>
 
-      <div v-if="hasNextPage" class="admin-page__load-more">
-        <BaseButton
-            :label="uk.admin.actions.loadMore"
-            type="button"
-            variant="secondary"
-            :disabled="isLoading"
-            :is-loading="isLoading"
-            @click="loadMore"
-        />
+      <div v-if="hasNextPage" :ref="setLoadMoreTrigger" class="admin-page__infinite-scroll" aria-live="polite">
+        <BaseLoader v-if="isLoading" :label="uk.common.labels.loading" size="sm" tone="primary" variant="wave" />
       </div>
     </section>
 

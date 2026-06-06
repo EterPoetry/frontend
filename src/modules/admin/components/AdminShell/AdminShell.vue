@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAdminStore } from '@/modules/admin/admin.store';
 import { AdminRole } from '@/modules/admin/enums/admin-role.enum';
 import { AdminRouteNames } from '@/modules/admin/enums/admin-route-names.enum';
+import AdminProfileDialog from '@/modules/admin/components/AdminProfileDialog/AdminProfileDialog.vue';
 import BaseButton from '@/shared/components/BaseButton/BaseButton.vue';
 import logoUrl from '@/shared/assets/icons/eter-logo.svg';
 import moonIconUrl from '@/shared/assets/icons/ui/moon.svg';
@@ -25,6 +26,7 @@ const route = useRoute();
 const router = useRouter();
 const adminStore = useAdminStore();
 const { theme, toggleTheme } = useTheme();
+const isProfileDialogOpen = ref(false);
 
 defineProps<{
     title: string;
@@ -40,9 +42,18 @@ const navItems = computed<AdminNavItem[]>(() => [
     { label: uk.admin.nav.profile, routeName: AdminRouteNames.PROFILE, iconClass: 'admin-shell__nav-icon--profile' },
 ].filter((item) => !item.globalOnly || adminStore.admin?.role === AdminRole.GLOBAL_ADMIN));
 
-const isItemActive = (item: AdminNavItem): boolean => route.name === item.routeName;
+const isItemActive = (item: AdminNavItem): boolean => (
+    item.routeName === AdminRouteNames.PROFILE
+        ? isProfileDialogOpen.value
+        : route.name === item.routeName
+);
 
 const navigateTo = async (item: AdminNavItem): Promise<void> => {
+    if (item.routeName === AdminRouteNames.PROFILE) {
+        isProfileDialogOpen.value = true;
+        return;
+    }
+
     if (isItemActive(item)) {
         return;
     }
@@ -78,19 +89,23 @@ const navigateTo = async (item: AdminNavItem): Promise<void> => {
       </nav>
 
       <div class="app-sidebar__footer app-sidebar__footer--auth">
-        <button
+        <BaseButton
+            :label="theme === 'dark' ? uk.admin.actions.lightTheme : uk.admin.actions.darkTheme"
             type="button"
+            variant="secondary"
             class="admin-shell__theme-toggle"
+            :disabled="false"
             :aria-label="uk.home.themeLabel"
             @click="toggleTheme"
         >
-          <img
-              :src="theme === 'dark' ? sunIconUrl : moonIconUrl"
-              alt=""
-              class="admin-shell__theme-icon"
-          />
-          <span>{{ theme === 'dark' ? uk.admin.actions.lightTheme : uk.admin.actions.darkTheme }}</span>
-        </button>
+          <template #icon>
+            <img
+                :src="theme === 'dark' ? sunIconUrl : moonIconUrl"
+                alt=""
+                class="admin-shell__theme-icon"
+            />
+          </template>
+        </BaseButton>
 
         <div class="admin-shell__identity">
           <strong class="admin-shell__identity-name">{{ adminStore.admin?.name }}</strong>
@@ -108,18 +123,24 @@ const navigateTo = async (item: AdminNavItem): Promise<void> => {
 
     <div class="admin-shell__main">
       <div class="admin-shell__mobile-actions">
-        <button
+        <BaseButton
+            :label="uk.home.themeLabel"
             type="button"
+            variant="secondary"
             class="admin-shell__theme-toggle admin-shell__theme-toggle--mobile"
+            :disabled="false"
+            icon-only
             :aria-label="uk.home.themeLabel"
             @click="toggleTheme"
         >
-          <img
-              :src="theme === 'dark' ? sunIconUrl : moonIconUrl"
-              alt=""
-              class="admin-shell__theme-icon"
-          />
-        </button>
+          <template #icon>
+            <img
+                :src="theme === 'dark' ? sunIconUrl : moonIconUrl"
+                alt=""
+                class="admin-shell__theme-icon"
+            />
+          </template>
+        </BaseButton>
       </div>
 
       <main class="admin-shell__content">
@@ -151,5 +172,10 @@ const navigateTo = async (item: AdminNavItem): Promise<void> => {
         <span class="app-bottom-bar__label">{{ item.label }}</span>
       </button>
     </nav>
+
+    <AdminProfileDialog
+        :is-open="isProfileDialogOpen"
+        @close="isProfileDialogOpen = false"
+    />
   </div>
 </template>

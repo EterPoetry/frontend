@@ -17,12 +17,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'close'): void;
-    (e: 'submit', payload: { categoryName: string; categoryDescription: string | null }): void;
+    (e: 'submit', payload: { categoryName: string }): void;
 }>();
 
 const form = reactive({
     categoryName: '',
-    categoryDescription: '',
 });
 
 const isEditMode = computed(() => Boolean(props.category));
@@ -30,7 +29,6 @@ const isSubmitDisabled = computed(() => !form.categoryName.trim() || props.isSub
 
 const syncForm = (): void => {
     form.categoryName = props.category?.categoryName ?? '';
-    form.categoryDescription = props.category?.categoryDescription ?? '';
 };
 
 watch(() => props.isOpen, (isOpen) => {
@@ -48,7 +46,6 @@ watch(() => props.category, () => {
 const handleSubmit = (): void => {
     emit('submit', {
         categoryName: form.categoryName.trim(),
-        categoryDescription: form.categoryDescription.trim() || null,
     });
 };
 </script>
@@ -69,19 +66,6 @@ const handleSubmit = (): void => {
           :placeholder="uk.admin.categories.dialog.namePlaceholder"
           :max-length="120"
           :disabled="isSubmitting"
-      />
-
-      <BaseField
-          id="admin-category-description"
-          v-model="form.categoryDescription"
-          :label="uk.admin.categories.fields.description"
-          :placeholder="uk.admin.categories.dialog.descriptionPlaceholder"
-          :max-length="5000"
-          :disabled="isSubmitting"
-          multiline
-          auto-resize
-          :rows="4"
-          :auto-resize-max-height="180"
       />
 
       <ErrorAlert v-if="errorMessage" :message="errorMessage" />

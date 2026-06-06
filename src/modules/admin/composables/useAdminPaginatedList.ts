@@ -3,7 +3,7 @@ import { ADMIN_DEFAULT_PAGE_LIMIT, ADMIN_FILTER_DEBOUNCE_MS } from '@/modules/ad
 import type { OffsetPaginationResponse } from '@/modules/admin/interfaces/offset-pagination-response.interface';
 import { uk } from '@/shared/locales/uk';
 
-export interface AdminPaginatedListOptions<TItem, TQuery> {
+export interface AdminPaginatedListOptions<TItem, TQuery extends { offset?: number; limit?: number }> {
     fetchItems: (query: TQuery) => Promise<OffsetPaginationResponse<TItem>>;
     buildQuery: () => TQuery;
     filterSources: WatchSource[];
@@ -18,15 +18,15 @@ export interface AdminPaginatedListReturn<TItem> {
     limit: Ref<number>;
     isLoading: Ref<boolean>;
     errorMessage: Ref<string>;
-    feedbackMessage: Ref<string>;
     hasNextPage: Ref<boolean>;
+    setLoadMoreTrigger: (element: Element | unknown) => void;
     loadItems: (append?: boolean) => Promise<void>;
     loadMore: () => Promise<void>;
     applyFilters: () => Promise<void>;
     handleItemDeleted: () => Promise<void>;
 }
 
-export function useAdminPaginatedList<TItem, TQuery>(
+export function useAdminPaginatedList<TItem, TQuery extends { offset?: number; limit?: number }>(
     options: AdminPaginatedListOptions<TItem, TQuery>,
 ): AdminPaginatedListReturn<TItem> {
     const {
@@ -43,19 +43,28 @@ export function useAdminPaginatedList<TItem, TQuery>(
     const limit = ref(initialLimit);
     const isLoading = ref(false);
     const errorMessage = ref('');
-    const feedbackMessage = ref('');
+    const loadMoreTrigger = ref<HTMLElement | null>(null);
     let filtersDebounceId: number | undefined;
     let requestSequence = 0;
+    let loadMoreObserver: IntersectionObserver | null = null;
 
-    const hasNextPage = computed(() => offset.value + items.value.length < total.value);
+    const hasNextPage = computed(() => items.value.length < total.value);
 
     const loadItems = async (append = false): Promise<void> => {
+        if (isLoading.value) {
+            return;
+        }
+
         const currentRequestId = ++requestSequence;
         isLoading.value = true;
         errorMessage.value = '';
 
         try {
-            const query = buildQuery();
+            const query = {
+                ...buildQuery(),
+                offset: offset.value,
+                limit: limit.value,
+            } as TQuery;
             const response = await fetchItems(query);
 
             if (currentRequestId !== requestSequence) {
@@ -90,15 +99,16 @@ export function useAdminPaginatedList<TItem, TQuery>(
     };
 
     const loadMore = async (): Promise<void> => {
-        offset.value += limit.value;
+        if (!hasNextPage.value || isLoading.value) {
+            return;
+        }
+
+        offset.value = items.value.length;
         await loadItems(true);
     };
 
     const handleItemDeleted = async (): Promise<void> => {
-        if (offset.value > 0 && items.value.length === 1) {
-            offset.value = Math.max(0, offset.value - limit.value);
-        }
-
+        offset.value = 0;
         await loadItems();
     };
 
@@ -108,12 +118,44 @@ export function useAdminPaginatedList<TItem, TQuery>(
         });
     }
 
+    const disconnectLoadMoreObserver = (): void => {
+        loadMoreObserver?.disconnect();
+        loadMoreObserver = null;
+    };
+
+    const setupLoadMoreObserver = (element: HTMLElement | null): void => {
+        disconnectLoadMoreObserver();
+
+        if (!element) {
+            return;
+        }
+
+        loadMoreObserver = new IntersectionObserver((entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+                void loadMore();
+            }
+        }, {
+            rootMargin: '240px 0px',
+            threshold: 0,
+        });
+        loadMoreObserver.observe(element);
+    };
+
+    const setLoadMoreTrigger = (element: Element | unknown): void => {
+        loadMoreTrigger.value = element instanceof HTMLElement ? element : null;
+    };
+
     watch(filterSources, () => {
         scheduleFilters();
     });
 
+    watch(loadMoreTrigger, (element) => {
+        setupLoadMoreObserver(element);
+    });
+
     onBeforeUnmount(() => {
         window.clearTimeout(filtersDebounceId);
+        disconnectLoadMoreObserver();
     });
 
     return {
@@ -123,8 +165,8 @@ export function useAdminPaginatedList<TItem, TQuery>(
         limit,
         isLoading,
         errorMessage,
-        feedbackMessage,
         hasNextPage,
+        setLoadMoreTrigger,
         loadItems,
         loadMore,
         applyFilters,
